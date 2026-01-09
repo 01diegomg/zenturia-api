@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// En prisma/schema.prisma
+datasource db {
+  provider = "sqlite" // Cambiamos de vuelta a sqlite
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  password     String
+  role         String        @default("CLIENT") 
+  appointments Appointment[]
+}
+
+model Service {
+  id           String        @id @default(cuid())
+  name         String
+  description  String
+  price        Float
+  duration     Int
+  appointments Appointment[]
+}
+
+model Appointment {
+  id        String   @id @default(cuid())
+  date      DateTime
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  service   Service  @relation(fields: [serviceId], references: [id])
+  serviceId String
+  status    String   @default("CONFIRMED")
+}
+
+
+model WorkSchedule {
+  id           Int     @id @default(autoincrement())
+  dayOfWeek    Int     @unique
+  workingHours String  @default("[]")
+  isDayOff     Boolean
+}
+
+model ScheduleOverride {
+  id           String   @id @default(cuid())
+  date         DateTime @unique
+  workingHours String
+  isDayOff     Boolean
+}
+
+model GalleryImage {
+  id        String   @id @default(cuid())
+  url       String
+  altText   String
+  createdAt DateTime @default(now())
+}
+
+model SiteContent {
+  id                  String   @id @default("main")
+  heroTitle           String
+  heroSubtitle        String
+  aboutText           String
+  aboutImage          String   @default("https://images.unsplash.com/photo-1621607512214-6c349036a732?q=80&w=1974&auto=format&fit=crop")
+  heroBackgroundType  String   @default("IMAGE")
+  heroBackgroundValue String   @default("https://images.unsplash.com/photo-15993512021aa5a4858783?q=80&w=2070&auto=format&fit=crop")
+  locationAddress     String
+  locationSchedule    String
+  locationMapUrl      String
+  updatedAt           DateTime @default(now()) @updatedAt
+
+  // === CAMPOS AÑADIDOS PARA LA PALETA DE COLORES ===
+  colorAccent     String @default("#CFAF7C")
+  colorBackground String @default("#0a0a0a")
+  colorTextMain   String @default("#FFFFFF")
+  colorTextSubtle String @default("#cccccc")
+}
+// En schema.prisma
+// datasource db {
+  // provider = "postgresql" // Para producción
+  // url      = env("DATABASE_URL")
+// }

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber Studio Cruzito</title>
+    
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <link rel="stylesheet" href="Barber_Fusion.css">
+
+</head>
+<body class="bg-black">
+
+    <div id="app-container">
+        <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <a href="#inicio" class="text-3xl font-display font-bold text-white tracking-widest drop-shadow site-title">BARBER STUDIO CRUZITO</a>
+                <nav id="main-nav" class="flex items-center space-x-6">
+                    <a href="#inicio" class="nav-link main-nav-link">INICIO</a>
+                    <a href="#sobre" class="nav-link main-nav-link">NOSOTROS</a>
+                    <a href="#servicios" class="nav-link main-nav-link">SERVICIOS</a>
+                    <a href="#galeria" class="nav-link main-nav-link">GALERÍA</a>
+                    <a href="#ubicacion" class="nav-link main-nav-link">UBICACIÓN</a>
+
+                    <a href="#agendar" id="agendar-btn" class="nav-button">AGENDAR</a>
+
+                    <div id="user-menu-container" class="relative">
+                        <button id="user-menu-btn" class="nav-button flex items-center gap-2">
+                            <span id="user-menu-name"></span>
+                            <span class="material-icons text-sm">expand_more</span>
+                        </button>
+                        <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] rounded-md shadow-lg py-1 z-50">
+                            <a href="#user-portal-view" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Mi Cuenta</a>
+                            <a href="#agendar" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Agendar Cita</a>
+                            <button id="dropdown-logout-btn" class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700">Cerrar Sesión</button>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        <main id="client-main-view">
+            <section id="inicio" class="hero-section h-screen bg-cover bg-center flex items-center justify-center relative">
+                <div class="absolute inset-0 bg-black opacity-60"></div>
+                <div class="text-center text-white z-10 px-4">
+                    <h1 id="welcome-message" class="font-display text-5xl md:text-7xl lg:text-8xl font-bold leading-tight mb-4">Estilo & Precisión</h1>
+                    <p id="hero-subtitle" class="text-lg md:text-xl max-w-2xl mx-auto mb-8">La experiencia de barbería clásica para el hombre moderno.</p>
+                    <a href="#agendar" class="nav-button text-lg px-8 py-4 transform hover:scale-105">
+                        RESERVA TU EXPERIENCIA
+                    </a>
+                </div>
+            </section>
+            
+            <section id="sobre" class="py-20 md:py-40 section-bg">
+                <div class="container mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <img id="about-section-image" src="https://images.unsplash.com/photo-1621607512214-6c349036a732?q=80&w=1974&auto=format&fit=crop" alt="Interior de la barbería" class="rounded-lg shadow-2xl w-full h-auto object-cover">
+                    </div>
+                    <div>
+                        <h2 class="section-title">Nuestra Esencia</h2>
+                        <div id="about-text-container" class="text-main"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="servicios" class="py-20 md:py-32 section-bg-alt">
+                <div class="container mx-auto px-6 text-center">
+                    <h2 class="section-title">Nuestros Rituales</h2>
+                    <div id="services-list-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12"></div>
+                </div>
+            </section>
+
+            <section id="galeria" class="py-20 md:py-32 section-bg">
+                <div class="container mx-auto px-6">
+                    <h2 class="section-title text-center mb-12">Nuestro Arte</h2>
+                    <div id="gallery-container" class="gallery-grid">
+                        </div>
+                </div>
+            </section>
+
+            <section id="ubicacion" class="py-20 md:py-32 section-bg-alt">
+                <div class="container mx-auto px-6">
+                    <div class="text-center">
+                        <h2 class="section-title">ENCUÉNTRANOS</h2>
+                        <p class="text-lg text-subtle mt-4 mb-10">Visítanos en el corazón de Tulancingo. ¡Te esperamos!</p>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-12 items-center">
+                        <div class="md:col-span-1 text-center md:text-left">
+                            <h3 class="font-display text-2xl text-accent mb-3">Dirección</h3>
+                            <p id="location-address" class="text-main"></p>
+                            
+                            <h3 class="font-display text-2xl text-accent mt-8 mb-3">Horario</h3>
+                            <p id="location-schedule" class="text-main"></p>
+                        </div>
+                        <div class="md:col-span-2 rounded-lg overflow-hidden shadow-2xl">
+                            <iframe id="location-map" src="" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="agendar" class="py-20 md:py-32 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1532710093739-947053e4148a?q=80&w=1974&auto=format&fit=crop')">
+                <div class="container mx-auto px-6">
+                     <div id="user-agenda-view">
+                         <div class="grid md:grid-cols-2 gap-12 items-center">
+                            <div class="text-white">
+                                <h2 id="user-agenda-header" class="font-display text-4xl md:text-5xl font-bold mb-6 section-title">Agenda tu Cita</h2>
+                                <p id="user-agenda-subtext" class="text-lg mb-4">Tu tiempo es valioso. Selecciona un día en el calendario para ver las horas disponibles.</p>
+                            </div>
+                            <div class="bg-black/80 backdrop-blur-sm p-8 rounded-lg shadow-2xl">
+                                <div class="calendar">
+                                    <div class="month-header">
+                                        <button id="user-prev-month-btn">&lt;</button>
+                                        <h2 id="user-month-year"></h2>
+                                        <button id="user-next-month-btn">&gt;</button>
+                                    </div>
+                                    <div class="weekdays">
+                                        <div>Dom</div> <div>Lun</div> <div>Mar</div> <div>Mié</div> <div>Jue</div> <div>Vie</div> <div>Sáb</div>
+                                    </div>
+                                    <div id="user-calendar-grid" class="calendar-grid"></div>
+                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="user-portal-view" class="hidden py-20 md:py-32 section-bg">
+                <div class="container mx-auto px-6">
+                    <h2 class="section-title text-center">Mi Cuenta</h2>
+                    <div class="grid md:grid-cols-2 gap-12 mt-12">
+                        <div class="portal-section">
+                            <h3 class="portal-section-title">Próximas Citas</h3>
+                            <div id="upcoming-appointments-list" class="space-y-6"></div>
+                        </div>
+                        <div class="portal-section">
+                            <h3 class="portal-section-title">Historial de Servicios</h3>
+                            <div id="past-appointments-list" class="space-y-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="py-12 bg-black text-center text-subtle">
+                <div class="container mx-auto px-6">
+                    <p>&copy; 2025 Punto Citas. Diego, Antonio y Abel .</p>
+                    <a href="#" id="admin-link" class="text-sm mt-2 hover:text-accent transition-colors">Acceso Administrador</a>
+                </div>
+            </footer>
+        </main>
+
+        <main id="admin-main-view" class="hidden pt-24 pb-24">
+            <div class="container mx-auto px-6">
+                <h2 class="font-display text-4xl md:text-5xl font-bold text-white text-center">Panel de Administración</h2>
+                
+                <div class="login-tabs my-8">
+                    <button data-tab="admin-appointments" class="tab-button active">Gestión de Citas</button>
+                    <button data-tab="admin-content" class="tab-button">Editar Contenido</button>
+                    <button data-tab="admin-schedule" class="tab-button">Gestor de Horarios</button>
+                </div>
+
+                <div data-tab-content="admin-appointments" class="tab-content active">
+                    <section class="py-8">
+                        <div class="admin-dashboard grid md:grid-cols-2 gap-8">
+                            <div class="inbox-container">
+                                <h3 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-icons">inbox</span> Buzón de Citas</h3>
+                                <div id="inbox-list" class="max-h-[400px] overflow-y-auto pr-2"></div>
+                            </div>
+                            <div class="calendar-container">
+                                 <div class="calendar">
+                                    <div class="month-header">
+                                        <button id="admin-prev-month-btn">&lt;</button>
+                                        <h2 id="admin-month-year"></h2>
+                                        <button id="admin-next-month-btn">&gt;</button>
+                                    </div>
+                                    <div class="weekdays">
+                                        <div>Dom</div> <div>Lun</div> <div>Mar</div> <div>Mié</div> <div>Jue</div> <div>Vie</div> <div>Sáb</div>
+                                    </div>
+                                    <div id="admin-calendar-grid" class="calendar-grid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div data-tab-content="admin-content" class="tab-content">
+                    <section class="py-8">
+                        <div class="admin-content-grid">
+                            
+                            <aside class="admin-sidebar">
+                                <nav>
+                                    <ul class="space-y-2">
+                                        <li><a href="#edit-visual" class="sidebar-link">Identidad Visual</a></li>
+                                        <li><a href="#edit-hero" class="sidebar-link">Sección Principal</a></li>
+                                        <li><a href="#edit-about" class="sidebar-link">Nuestra Esencia</a></li>
+                                        <li><a href="#edit-location" class="sidebar-link">Ubicación</a></li>
+                                        <li><a href="#edit-services" class="sidebar-link">Rituales (Servicios)</a></li>
+                                        <li><a href="#edit-gallery" class="sidebar-link">Galería</a></li>
+                                        <li><a href="#edit-texts" class="sidebar-link">Textos del Sitio</a></li>
+                                    </ul>
+                                </nav>
+                            </aside>
+                
+                            <main class="admin-main-content">
+                                <section id="edit-visual" class="portal-section mb-8">
+                                    <div class="admin-card-header">
+                                        <h3 class="portal-section-title flex items-center gap-3"><span class="material-icons">palette</span>Identidad Visual</h3>
+                                    </div>
+                                    <div class="mt-6">
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                                            <div class="color-picker-wrapper">
+                                                <label for="color-accent" class="color-picker-label">Color de Acento</label>
+                                                <input type="color" id="color-accent" data-color-var="--dorado-vintage" class="color-picker-input">
+                                                <p class="color-picker-desc">Títulos, botones y detalles</p>
+                                            </div>
+                                            <div class="color-picker-wrapper">
+                                                <label for="color-background" class="color-picker-label">Color de Fondo</label>
+                                                <input type="color" id="color-background" data-color-var="--negro-intenso" class="color-picker-input">
+                                                <p class="color-picker-desc">El fondo principal del sitio</p>
+                                            </div>
+                                            <div class="color-picker-wrapper">
+                                                <label for="color-text-main" class="color-picker-label">Texto Principal</label>
+                                                <input type="color" id="color-text-main" data-color-var="--blanco-puro" class="color-picker-input">
+                                                <p class="color-picker-desc">Textos importantes y navegación</p>
+                                            </div>
+                                            <div class="color-picker-wrapper">
+                                                <label for="color-text-subtle" class="color-picker-label">Texto Secundario</label>
+                                                <input type="color" id="color-text-subtle" data-color-var="--gris-suave" class="color-picker-input">
+                                                <p class="color-picker-desc">Párrafos y texto menos relevante</p>
+                                            </div>
+                                        </div>
+                                        <div class="border-t border-gray-700 pt-6">
+                                            <h4 class="font-semibold text-white mb-4">O aplica un tema predefinido:</h4>
+                                            <div id="theme-presets-container" class="flex flex-wrap gap-4"></div>
+                                        </div>
+                                        <div class="mt-8 text-right">
+                                            <button id="save-palette-btn" class="modal-button !w-auto px-6 py-3">Guardar Paleta de Colores</button>
+                                        </div>
+                                    </div>
+                                </section>
+                
+                                <section id="edit-hero" class="portal-section mb-8">
+                                    <div class="admin-card-header">
+                                        <h3 class="portal-section-title">Personalizar Sección Principal</h3>
+                                    </div>
+                                    <div class="mt-4 space-y-6">
+                                        <div>
+                                            <label class="font-semibold text-white">Tipo de Fondo</label>
+                                            <div class="flex items-center gap-6 mt-2">
+                                                <label for="bg-type-image" class="flex items-center gap-2 cursor-pointer"><input type="radio" id="bg-type-image" name="bg-type" value="IMAGE" checked class="w-4 h-4"> Imagen</label>
+                                                <label for="bg-type-color" class="flex items-center gap-2 cursor-pointer"><input type="radio" id="bg-type-color" name="bg-type" value="COLOR" class="w-4 h-4"> Color Sólido</label>
+                                            </div>
+                                        </div>
+                                        <div id="hero-bg-image-controls">
+                                            <label for="hero-bg-file" class="block mb-2 text-sm font-medium text-gray-300">Subir nueva imagen de fondo</label>
+                                            <input type="file" id="hero-bg-file" accept="image/*" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-gray-600 hover:file:bg-gray-700 file:text-white">
+                                        </div>
+                                        <div id="hero-bg-color-controls" class="hidden">
+                                            <label for="hero-bg-color" class="block mb-2 text-sm font-medium text-gray-300">Seleccionar color de fondo</label>
+                                            <input type="color" id="hero-bg-color" value="#000000" class="p-1 h-10 w-full block bg-gray-800 border-gray-600 cursor-pointer rounded-lg">
+                                        </div>
+                                        <button id="save-hero-bg-btn" class="modal-button mt-4">Guardar Cambios de Fondo</button>
+                                    </div>
+                                </section>
+                
+                                <section id="edit-about" class="portal-section mb-8">
+                                    <div class="admin-card-header">
+                                        <h3 class="portal-section-title">Personalizar Sección "Nuestra Esencia"</h3>
+                                    </div>
+                                    <div class="mt-4 space-y-4">
+                                        <div class="form-group">
+                                            <label for="about-image-file" class="block mb-2 text-sm font-medium text-gray-300">Cambiar Imagen</label>
+                                            <input type="file" id="about-image-file" accept="image/*" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-gray-600 hover:file:bg-gray-700 file:text-white">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="edit-about-text-2">Modificar Texto</label>
+                                            <textarea id="edit-about-text-2" rows="5" class="portal-input"></textarea>
+                                        </div>
+                                        <button id="save-about-section-btn" class="modal-button">Guardar Cambios en "Nuestra Esencia"</button>
+                                    </div>
+                                </section>
+                
+                                <section id="edit-location" class="portal-section mb-8">
+                                    <div class="admin-card-header">
+                                        <h3 class="portal-section-title">Personalizar Sección Ubicación</h3>
+                                    </div>
+                                    <div class="mt-4 space-y-4">
+                                        <div class="form-group">
+                                            <label for="edit-location-address">Dirección</label>
+                                            <textarea id="edit-location-address" rows="3" class="portal-input" placeholder="Usa <br> para saltos de línea"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="edit-location-schedule">Horario</label>
+                                            <textarea id="edit-location-schedule" rows="3" class="portal-input" placeholder="Usa <br> para saltos de línea"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="edit-location-map">URL del Mapa de Google Maps</label>
+                                            <input type="text" id="edit-location-map" class="portal-input" placeholder="Pega aquí el enlace 'embed' del mapa">
+                                        </div>
+                                        <button id="save-location-btn" class="modal-button">Guardar Cambios de Ubicación</button>
+                                    </div>
+                                </section>
+                                
+                                <section id="edit-services" class="portal-section mb-8">
+                                    <div class="admin-card-header">
+                                        <h3 class="portal-section-title">Gestionar Rituales</h3>
+                                        <button id="add-service-btn" class="modal-button !w-auto px-4 py-2">Añadir Nuevo</button>
+                                    </div>
+                                    <div id="admin-services-list" class="space-y-3 mt-4"></div>
+                                </section>
+                                
+                                <section id="edit-gallery" class="portal-section mb-8">
+                                    <div class="admin-card-header">
+                                        <h3 class="portal-section-title">Gestionar Galería</h3>
+                                        <button id="add-gallery-image-btn" class="modal-button !w-auto px-4 py-2">Añadir Imagen</button>
+                                    </div>
+                                    <div id="admin-gallery-list" class="grid grid-cols-2 gap-4 mt-4"></div>
+                                </section>
+                                
+                                <section id="edit-texts" class="portal-section mb-8">
+                                    <div class="admin-card-header">
+                                        <h3 class="portal-section-title">Editar Textos del Sitio</h3>
+                                    </div>
+                                     <div class="space-y-4 mt-4">
+                                         <div class="form-group">
+                                             <label for="edit-hero-title">Título Principal</label>
+                                             <input type="text" id="edit-hero-title" class="portal-input">
+                                         </div>
+                                         <div class="form-group">
+                                             <label for="edit-hero-subtitle">Subtítulo Principal</label>
+                                             <textarea id="edit-hero-subtitle" rows="3" class="portal-input"></textarea>
+                                         </div>
+                                         <button id="save-texts-btn" class="modal-button">Guardar Textos</button>
+                                     </div>
+                                </section>
+                            </main>
+                        </div>
+                    </section>
+                </div>
+                <div data-tab-content="admin-schedule" class="tab-content">
+                    <section class="py-8">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                            <div class="portal-section">
+                                <h3 class="portal-section-title">Tu Horario Semanal Base</h3>
+                                <p class="text-gray-400 mb-6">Este es el horario que se aplicará por defecto cada semana.</p>
+                                <div id="schedule-editor-container" class="space-y-4"></div>
+                                <button id="save-schedule-btn" class="modal-button mt-8">Guardar Horario Semanal</button>
+                            </div>
+
+                            <div class="portal-section">
+                                <h3 class="portal-section-title">Excepciones y Días Especiales</h3>
+                                <p class="text-gray-400 mb-6">Haz clic en un día del calendario para definir un horario único para esa fecha o para marcarlo como cerrado.</p>
+                                <div class="calendar">
+                                    <div class="month-header">
+                                        <button id="override-prev-month-btn">&lt;</button>
+                                        <h2 id="override-month-year"></h2>
+                                        <button id="override-next-month-btn">&gt;</button>
+                                    </div>
+                                    <div class="weekdays">
+                                        <div>Dom</div> <div>Lun</div> <div>Mar</div> <div>Mié</div> <div>Jue</div> <div>Vie</div> <div>Sáb</div>
+                                    </div>
+                                    <div id="override-calendar-grid" class="calendar-grid"></div>
+                                </div>
+                                 <p class="text-xs text-gray-500 mt-4"><span class="inline-block w-3 h-3 bg-cyan-500 rounded-full mr-2"></span>Días con horario especial</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <div id="admin-login-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="admin-login-title">
+        <div class="modal-content">
+            <button class="close-modal-btn">&times;</button>
+            <h3 id="admin-login-title" class="font-display text-2xl mb-4">Acceso Administrador</h3>
+            <div class="form-group">
+                <label for="admin-user">Usuario</label>
+                <input type="text" id="admin-user" class="portal-input">
+            </div>
+            <div class="form-group">
+                <label for="admin-pass">Contraseña</label>
+                <input type="password" id="admin-pass" class="portal-input">
+            </div>
+            <button id="admin-login-btn" class="modal-button">Ingresar</button>
+        </div>
+    </div>
+
+    <div id="booking-modal-container" class="modal-overlay hidden" role="dialog"aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content">
+            <button class="close-modal-btn">&times;</button>
+            <h3 id="modal-title" class="font-display"></h3>
+            <div id="booking-step-1">
+                <p class="text-gray-300 mb-4">Completa los siguientes pasos para tu reserva.</p>
+                <div class="form-group">
+                    <label class="text-gray-300 font-semibold">1. Elige tu Ritual:</label>
+                    <div id="service-selection-container" class="space-y-3 mt-2"></div>
+                </div>
+                 <div class="form-group">
+                    <label class="text-gray-300 font-semibold">2. Elige tu Hora:</label>
+                    <div id="time-slots-container" class="time-slots mt-2"></div>
+                </div>
+                 <button id="booking-next-btn" class="modal-button mt-4" disabled>Siguiente</button>
+            </div>
+            <div id="booking-step-2" class="hidden">
+                <div id="client-login-view">
+                    <h3 class="font-display text-2xl mb-4">Acceso Cliente</h3>
+                    <p class="text-gray-400 mb-4">Inicia sesión para finalizar tu cita.</p>
+                    <div class="form-group">
+                        <label for="login-email">Correo Electrónico</label>
+                        <input type="email" id="login-email" class="portal-input" placeholder="tu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Contraseña</label>
+                        <input type="password" id="login-password" class="portal-input">
+                    </div>
+                    <button id="client-login-btn" class="modal-button">Iniciar Sesión y Confirmar</button>
+                    <p class="text-center my-4 text-gray-500">o</p>
+                    <button id="show-register-btn" class="w-full text-yellow-500 font-semibold">¿No tienes cuenta? Regístrate</button>
+                </div>
+                <div id="client-register-view" class="hidden">
+                    <h3 class="font-display text-2xl mb-4">Crea tu Cuenta para Confirmar</h3>
+                    <div class="form-group">
+                        <label for="register-name">Nombre Completo</label>
+                        <input type="text" id="register-name" class="portal-input" placeholder="Ej: Juan Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Correo Electrónico</label>
+                        <input type="email" id="register-email" class="portal-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Crea una Contraseña</label>
+                        <input type="password" id="register-password" class="portal-input">
+                    </div>
+                    <button id="client-register-btn" class="modal-button">Registrarse y Confirmar</button>
+                    <p class="text-center my-4 text-gray-500">o</p>
+                    <button id="show-login-btn" class="w-full text-yellow-500 font-semibold">¿Ya tienes cuenta? Inicia Sesión</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="admin-day-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="admin-modal-date">
+        <div class="modal-content">
+            <button class="close-modal-btn">&times;</button>
+            <h3 id="admin-modal-date" class="font-display"></h3>
+            <div id="admin-modal-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2"></div>
+        </div>
+    </div>
+    
+    <div id="content-editor-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editor-modal-title">
+        <div class="modal-content max-w-lg">
+            <button class="close-modal-btn">&times;</button>
+            <h3 id="editor-modal-title" class="font-display text-2xl mb-6"></h3>
+            <div id="editor-modal-body" class="space-y-4">
+                <input type="hidden" id="edit-service-id">
+                <div class="form-group">
+                    <label for="edit-service-name">Nombre del Ritual</label>
+                    <input type="text" id="edit-service-name" class="portal-input">
+                </div>
+                <div class="form-group">
+                    <label for="edit-service-description">Descripción</label>
+                    <textarea id="edit-service-description" rows="4" class="portal-input"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="edit-service-price">Precio ($)</label>
+                        <input type="number" id="edit-service-price" class="portal-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-service-duration">Duración (min)</label>
+                        <input type="number" id="edit-service-duration" class="portal-input">
+                    </div>
+                </div>
+                <button id="save-service-btn" class="modal-button mt-4">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="manual-booking-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-content max-w-lg">
+        <button class="close-modal-btn">&times;</button>
+        <h3 id="manual-booking-title" class="font-display text-2xl mb-6"></h3>
+        <div class="space-y-4">
+            <div class="form-group">
+                <label for="manual-booking-service">Seleccionar Ritual</label>
+                <select id="manual-booking-service" class="portal-input"></select>
+            </div>
+            <div class="form-group">
+                <label for="manual-booking-name">Nombre del Cliente (Opcional)</label>
+                <input type="text" id="manual-booking-name" class="portal-input" value="Cliente Presencial">
+            </div>
+            <button id="confirm-manual-booking-btn" class="modal-button mt-4">Confirmar y Agendar</button>
+        </div>
+    </div>
+</div>
+
+    <div id="gallery-editor-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="gallery-editor-title">
+        <div class="modal-content max-w-lg">
+            <button class="close-modal-btn">&times;</button>
+            <h3 id="gallery-editor-title" class="font-display text-2xl mb-6">Añadir Nueva Imagen a la Galería</h3>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label for="edit-gallery-file" class="block mb-2 text-sm font-medium text-gray-300">Seleccionar Archivo de Imagen</label>
+                    <input type="file" id="edit-gallery-file" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-500 file:text-black hover:file:bg-yellow-600" accept="image/*">
+                    <div id="image-preview-container" class="mt-4 hidden">
+                        <img id="image-preview" src="#" alt="Vista previa de la imagen" class="max-h-48 rounded-md mx-auto">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-gallery-alt">Descripción (Texto Alternativo)</label>
+                    <input type="text" id="edit-gallery-alt" class="portal-input" placeholder="Ej: Cliente con corte desvanecido">
+                </div>
+                <button id="save-gallery-image-btn" class="modal-button mt-4" disabled>Añadir a la Galería</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="override-editor-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+        <div class="modal-content max-w-2xl">
+            <button class="close-modal-btn">&times;</button>
+            <h3 id="override-modal-title" class="font-display text-2xl mb-4"></h3>
+            <div class="form-group">
+                <label class="flex items-center gap-3">
+                    <input type="checkbox" id="override-day-off-checkbox" class="h-5 w-5 rounded">
+                    <span class="font-semibold text-white">Marcar este día como cerrado</span>
+                </label>
+            </div>
+            <div id="override-intervals-container" class="space-y-3 mt-4">
+                </div>
+            <button id="add-override-interval-btn" class="mt-4 text-green-400 font-semibold flex items-center gap-2">
+                <span class="material-icons">add_circle</span> Añadir otro bloque horario
+            </button>
+            <div class="flex gap-4 mt-8">
+                <button id="save-override-btn" class="modal-button flex-1">Guardar Horario del Día</button>
+                <button id="delete-override-btn" class="modal-button !bg-red-800 hover:!bg-red-900 flex-1">Restablecer a Horario Semanal</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gallery-lightbox-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+        <button class="close-modal-btn lightbox-close">&times;</button>
+        <div class="lightbox-content">
+            <img id="lightbox-image" src="" alt="Vista ampliada de la galería">
+        </div>
+    </div>
+    <div id="toast-container"></div>
+
+        <a href="#inicio" id="back-to-top-btn" class="back-to-top-btn" aria-label="Volver arriba">
+        <span class="material-icons">arrow_upward</span> </a>
+
+    <div id="toast-container"></div>
+    <script type="module" src="main.js"></script>
+
+</body>
+</html>
+
+

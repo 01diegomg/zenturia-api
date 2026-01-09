@@ -1,0 +1,838 @@
+/* Directivas de Tailwind: Deben ir SIEMPRE al principio */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =======================================================
+   TUS ESTILOS PERSONALIZADOS ORIGINALES
+   ======================================================= */
+
+/* === VARIABLES DE COLOR DINÁMICAS === */
+:root {
+  /* Paleta por defecto (Clásica) */
+  --dorado-vintage: #CFAF7C; /* Color de Acento */
+  --negro-intenso: #0a0a0a;  /* Color de Fondo */
+  --blanco-puro: #FFFFFF;   /* Color de Texto Principal */
+  --gris-suave: #cccccc;    /* Color de Texto Secundario */
+  
+  /* Color de hover derivado del acento */
+  --acento-hover: #d8bb8c; 
+}
+
+/* === BASE === */
+body {
+  font-family: 'Montserrat', sans-serif;
+  background-color: var(--negro-intenso); /* Usando variable */
+  color: var(--gris-suave); /* Usando variable */
+  scroll-behavior: smooth;
+  transition: background-color 0.3s, color 0.3s;
+}
+.font-display {
+  font-family: 'Playfair Display', serif;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.hidden {
+  display: none !important;
+}
+
+/* === COLORES DE TEXTO === */
+.text-accent { color: var(--dorado-vintage); }
+.text-main { color: var(--blanco-puro); }
+.text-subtle { color: var(--gris-suave); }
+.site-title { color: var(--blanco-puro); }
+
+/* === FONDOS DE SECCIÓN === */
+.section-bg { background-color: #111111; } /* Un poco más claro que el fondo principal */
+.section-bg-alt { background-color: var(--negro-intenso); }
+
+/* === TÍTULOS === */
+.section-title {
+  font-family: 'Playfair Display', serif;
+  color: var(--dorado-vintage);
+  text-transform: uppercase;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+@media (min-width: 768px) {
+  .section-title { font-size: 3.125rem; }
+}
+
+/* === NAVEGACIÓN === */
+.nav-link {
+  position: relative;
+  padding-bottom: 8px;
+  color: var(--blanco-puro); /* Texto principal */
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.nav-link:hover {
+  color: var(--dorado-vintage); /* Acento al pasar el cursor */
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--dorado-vintage);
+  transition: width 0.3s ease-in-out;
+}
+.nav-link:hover::after,
+.nav-link-active::after {
+  width: 100%;
+}
+
+/* === BOTONES === */
+.nav-button {
+  background-color: var(--dorado-vintage) !important;
+  color: var(--negro-intenso) !important;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-button:hover {
+  background-color: var(--acento-hover) !important;
+  transform: scale(1.02);
+}
+.modal-button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  background-color: var(--dorado-vintage) !important;
+  color: var(--negro-intenso) !important;
+}
+.modal-button:hover:not(:disabled) {
+  background-color: var(--acento-hover) !important;
+}
+.modal-button:disabled {
+  background-color: #4a5568 !important;
+  color: #a0aec0 !important;
+  cursor: not-allowed;
+}
+
+/* === SPINNER DE CARGA === */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--blanco-puro);
+    animation: spin 1s ease-in-out infinite;
+}
+.modal-button .spinner {
+    border-top-color: var(--negro-intenso);
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* === FORMULARIOS === */
+.portal-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #222;
+  color: var(--blanco-puro);
+}
+.portal-input:focus {
+  outline: none;
+  border-color: var(--dorado-vintage);
+}
+.form-group label {
+  color: var(--blanco-puro);
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* === CALENDARIO === */
+.calendar {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 10px;
+  color: var(--blanco-puro);
+}
+.month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.month-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  color: var(--dorado-vintage);
+}
+.month-header button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--dorado-vintage);
+}
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: var(--gris-suave);
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+.calendar-day {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.calendar-day:not(.empty):not(.past-day):hover {
+  border-color: var(--dorado-vintage);
+}
+.calendar-day.past-day {
+  color: #555;
+  cursor: not-allowed;
+}
+.calendar-day.empty {
+  cursor: default;
+}
+.calendar-day.current-day {
+  background-color: var(--dorado-vintage);
+  color: var(--negro-intenso);
+}
+.appointment-dot {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--dorado-vintage);
+}
+.appointment-dot.busy {
+  box-shadow: 0 0 8px var(--dorado-vintage);
+}
+
+/* === SELECCIÓN DE SERVICIO Y HORAS === */
+#service-selection-container label.selected {
+  border-color: var(--dorado-vintage);
+  background-color: color-mix(in srgb, var(--dorado-vintage) 20%, transparent);
+}
+.time-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px;
+}
+.time-slot {
+  padding: 10px;
+  border: 2px solid #444;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.time-slot.available:hover {
+  border-color: var(--dorado-vintage);
+  color: var(--dorado-vintage);
+}
+.time-slot.selected {
+  background-color: var(--dorado-vintage);
+  color: var(--negro-intenso);
+  border-color: var(--dorado-vintage);
+}
+
+
+/* === GALERÍA CREATIVA === */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+    grid-auto-rows: 250px;
+}
+.gallery-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    cursor: pointer;
+}
+.gallery-item:nth-child(4n - 1) {
+    grid-row-end: span 2;
+}
+.gallery-item:nth-child(6n - 3) {
+    grid-row-end: span 2;
+}
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.gallery-item:hover img {
+    transform: scale(1.05);
+}
+.gallery-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    display: flex;
+    align-items: flex-end;
+    padding: 1.5rem;
+}
+.gallery-item:hover .gallery-overlay {
+    opacity: 1;
+}
+.gallery-overlay p {
+    color: var(--blanco-puro);
+    font-weight: 600;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.4s ease 0.1s;
+}
+.gallery-item:hover .gallery-overlay p {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+
+/* === MODALES === */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+.modal-content {
+  background-color: #1a1a1a;
+  padding: 2.5rem;
+  border-radius: 12px;
+  position: relative;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border: 1px solid #333;
+}
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--gris-suave);
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+  z-index: 10;
+}
+.close-modal-btn:hover {
+  color: var(--blanco-puro);
+}
+
+/* === LIGHTBOX DE LA GALERÍA === */
+.lightbox-content {
+    background: none;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.lightbox-content img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8);
+}
+.lightbox-close {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    font-size: 3rem;
+    color: white;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.7);
+    z-index: 1001;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+.lightbox-close:hover {
+    transform: scale(1.1);
+}
+
+
+/* === ADMIN === */
+.login-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  border-bottom: 1px solid #444;
+}
+.tab-button {
+  padding: 1rem;
+  background: none;
+  border: none;
+  color: var(--gris-suave);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+.tab-button.active {
+  border-bottom: 3px solid var(--dorado-vintage);
+  color: var(--dorado-vintage);
+}
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
+.portal-section {
+  background-color: #1a1a1a;
+  padding: 2rem;
+  border-radius: 12px;
+}
+.admin-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+.portal-section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.75rem;
+  color: var(--blanco-puro);
+}
+
+.schedule-time-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #222;
+  color: var(--blanco-puro);
+}
+.schedule-time-input:focus {
+  outline: none;
+  border-color: var(--dorado-vintage);
+}
+
+.admin-appointment-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #2d2d2d;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+.admin-appointment-card.fade-out {
+    opacity: 0;
+    transform: translateX(-100%);
+}
+
+.admin-appointment-card .appointment-actions {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.3s ease;
+}
+
+.admin-appointment-card:hover .appointment-actions {
+    opacity: 1;
+    transform: translateX(0);
+}
+.delete-appointment-btn {
+    background: none;
+    border: none;
+    color: #f87171; /* Rojo claro */
+    cursor: pointer;
+    padding: 0.5rem;
+}
+.delete-appointment-btn:hover {
+    color: #ef4444; /* Rojo más intenso */
+}
+.appointment-confirm-delete {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(220, 38, 38, 0.9); /* Fondo rojo semitransparente */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: white;
+    font-weight: 600;
+}
+.admin-appointment-card.confirming-delete .appointment-details,
+.admin-appointment-card.confirming-delete .appointment-actions {
+    opacity: 0.1; /* Atenúa el contenido original */
+}
+.confirm-delete-btn, .cancel-delete-btn {
+    background: none;
+    border: 2px solid white;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.confirm-delete-btn:hover {
+    background-color: white;
+    color: #dc2626;
+}
+.cancel-delete-btn {
+    background-color: rgba(0,0,0,0.2);
+}
+.cancel-delete-btn:hover {
+    background-color: rgba(0,0,0,0.4);
+}
+
+.client-appointment-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #1f2937;
+    border-left: 4px solid var(--dorado-vintage);
+    padding: 1.5rem;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+.client-appointment-card.fade-out {
+    opacity: 0;
+    transform: scale(0.9);
+    margin-bottom: -100px; /* Para que el espacio se colapse */
+}
+.client-appointment-card .appointment-actions {
+    position: static; /* Quitar posicionamiento absoluto para que sea parte del flexbox */
+}
+
+.cancel-appointment-btn {
+    background-color: transparent;
+    color: var(--blanco-puro); /* Texto blanco para máximo contraste */
+    border: 2px solid var(--gris-suave); /* Borde gris claro, claramente visible */
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.cancel-appointment-btn:hover {
+    background-color: var(--gris-suave); /* Al pasar el cursor, el fondo se vuelve gris */
+    color: var(--negro-intenso); /* Y el texto se vuelve oscuro */
+    border-color: var(--gris-suave);
+}
+
+.appointment-confirm-cancel {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(17, 24, 39, 0.95); /* Fondo oscuro */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: white;
+    font-weight: 600;
+}
+.client-appointment-card.confirming-cancel .appointment-details,
+.client-appointment-card.confirming-cancel .appointment-actions {
+  filter: blur(2px);
+  opacity: 0.3;
+}
+
+/* Regla 2: Solo para MOSTRAR el diálogo de confirmación (claro y nítido) */
+.client-appointment-card.confirming-cancel .appointment-confirm-cancel {
+  display: flex !important;
+}
+.confirm-cancel-btn, .abort-cancel-btn {
+    background: none;
+    border: 2px solid var(--dorado-vintage);
+    color: var(--dorado-vintage);
+    padding: 0.5rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.confirm-cancel-btn:hover {
+    background-color: var(--dorado-vintage);
+    color: var(--negro-intenso);
+}
+.abort-cancel-btn {
+    background-color: rgba(255,255,255,0.1);
+    border-color: transparent;
+    color: white;
+}
+.abort-cancel-btn:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+
+/* === EDITOR DE COLORES === */
+.color-picker-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+.color-picker-label {
+  font-weight: 600;
+  color: var(--blanco-puro);
+  margin-bottom: 8px;
+}
+.color-picker-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 48px;
+  background-color: transparent;
+  border: 2px solid #555;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.color-picker-input:hover {
+  border-color: var(--dorado-vintage);
+}
+.color-picker-input::-webkit-color-swatch {
+  border-radius: 5px;
+  border: none;
+}
+.color-picker-input::-moz-color-swatch {
+  border-radius: 5px;
+  border: none;
+}
+.color-picker-desc {
+  font-size: 0.8rem;
+  color: var(--gris-suave);
+  margin-top: 6px;
+}
+
+.theme-preset-btn {
+  padding: 10px 16px;
+  border: 2px solid #555;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  background-color: #222;
+  color: var(--blanco-puro);
+}
+.theme-preset-btn:hover {
+  border-color: var(--dorado-vintage);
+  color: var(--dorado-vintage);
+  transform: translateY(-2px);
+}
+.theme-preset-btn.active {
+  background-color: var(--dorado-vintage);
+  color: var(--negro-intenso);
+  border-color: var(--dorado-vintage);
+}
+
+.header-scrolled {
+  background-color: var(--negro-intenso);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+/* Estilo para el enlace de la sección activa */
+.nav-link-active {
+  color: var(--dorado-vintage) !important; /* Asegura que el texto cambie */
+}
+
+.nav-link-active::after {
+  width: 100%; /* La línea de abajo siempre visible */
+}
+.back-to-top-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background-color: var(--dorado-vintage);
+  color: var(--negro-intenso);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  text-decoration: none;
+  opacity: 0; /* Oculto por defecto */
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.back-to-top-btn.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.back-to-top-btn:hover {
+  background-color: var(--acento-hover);
+  transform: scale(1.1);
+}
+
+.admin-content-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr; /* Columna de 240px para el sidebar, el resto para el contenido */
+  gap: 2rem;
+  align-items: start;
+}
+
+.admin-sidebar {
+  position: sticky; /* ¡La magia está aquí! */
+  top: 100px; /* Se quedará fijo a 100px del borde superior */
+  height: calc(100vh - 120px); /* Ocupa casi toda la altura visible */
+}
+
+.sidebar-link {
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--gris-suave);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--blanco-puro);
+}
+
+.sidebar-link.active {
+  color: var(--dorado-vintage);
+  background-color: rgba(207, 175, 124, 0.1); /* Un fondo sutil del color de acento */
+  border-left: 3px solid var(--dorado-vintage);
+}
+#user-menu-btn {
+  /* Asegura que el botón se vea bien y sea clicable */
+  min-width: 140px; /* Ancho mínimo para que el texto respire */
+  justify-content: space-between; /* Espacio entre el texto y el icono */
+  padding: 0.75rem 1.25rem; /* Ajusta el padding para que se vea más grande */
+}
+
+/* Estilos para el menú desplegable */
+#user-menu-dropdown {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease-in-out;
+
+  /* Rediseño del menú */
+  width: 200px; /* Un poco más ancho */
+  border: 1px solid var(--dorado-vintage); /* Borde sutil del color de acento */
+  background-color: var(--negro-intenso); /* Fondo oscuro */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Sombra más pronunciada */
+}
+
+/* Muestra el menú cuando tiene la clase 'open' */
+#user-menu-dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Estilos para los enlaces del menú desplegable */
+#user-menu-dropdown a,
+#user-menu-dropdown button {
+  font-size: 1rem; /* Texto un poco más grande */
+  padding: 0.75rem 1.25rem; /* Más padding para mayor espacio */
+  color: var(--blanco-puro); /* Color de texto principal */
+  transition: background-color 0.2s ease;
+}
+
+#user-menu-dropdown a:hover,
+#user-menu-dropdown button:hover {
+  background-color: var(--gris-oscuro); /* Un gris oscuro para el hover */
+  color: var(--dorado-vintage); /* Color de acento al pasar el ratón */
+}
+
+/* Estilo específico para el botón de cerrar sesión */
+#dropdown-logout-btn {
+  color: var(--rojo-brillante); /* Un color de advertencia para cerrar sesión */
+}
+
+#dropdown-logout-btn:hover {
+  color: var(--rojo-oscuro); /* Un rojo más oscuro al pasar el ratón */
+}
+.cancelled-appointment {
+  opacity: 0.5;
+  border-left: 4px solid #6b7280; /* Borde gris */
+  background-color: #1f2937 !important; /* Un fondo más oscuro */
+}
+
+.cancelled-appointment .appointment-details {
+  text-decoration: line-through; /* Tacha el texto */
+}
+
+.day-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.day-time-slot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.day-time-slot.booked {
+  background-color: #1f2937; /* Un color para citas ocupadas */
+  border-left: 4px solid var(--dorado-vintage);
+}
+
+.day-time-slot.available {
+  background-color: rgba(34, 197, 94, 0.1); /* Verde sutil para disponible */
+  border: 1px dashed #22c55e;
+  cursor: pointer;
+}
+
+.day-time-slot.available:hover {
+  background-color: rgba(34, 197, 94, 0.2);
+  border-style: solid;
+}
