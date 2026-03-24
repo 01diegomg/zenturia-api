@@ -1,0 +1,48 @@
+<!-- Header / Navegación Principal -->
+<header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <a href="#inicio" class="flex items-center gap-3">
+            <span id="business-logo" class="hidden"></span>
+            <span class="text-3xl font-display font-bold text-white tracking-widest drop-shadow site-title">Mi Barbería</span>
+        </a>
+        <nav id="main-nav" class="flex items-center space-x-6">
+            <a href="#inicio" class="nav-link main-nav-link">INICIO</a>
+            <a href="#sobre" class="nav-link main-nav-link">NOSOTROS</a>
+            <a href="#servicios" class="nav-link main-nav-link">SERVICIOS</a>
+            <a href="#galeria" class="nav-link main-nav-link">GALERÍA</a>
+            <a href="#testimonios" class="nav-link main-nav-link">RESEÑAS</a>
+            <a href="#ubicacion" class="nav-link main-nav-link">UBICACIÓN</a>
+
+            <a href="#agendar" id="agendar-btn" class="nav-button">AGENDAR</a>
+
+            <!-- Botón "Mis Citas" visible cuando el usuario está logueado -->
+            <a href="#user-portal-view" id="mis-citas-btn" class="nav-button-secondary hidden">
+                <span class="material-icons text-sm mr-1">calendar_today</span>
+                MIS CITAS
+            </a>
+
+            <div id="user-menu-container" class="relative hidden">
+                <button id="user-menu-btn" class="nav-button flex items-center gap-2">
+                    <span class="material-icons text-sm mr-1">person</span>
+                    <span id="user-menu-name"></span>
+                    <span class="material-icons text-sm">expand_more</span>
+                </button>
+                <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] rounded-md shadow-lg py-1 z-50">
+                    <a href="#user-portal-view" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
+                        <span class="material-icons text-sm">account_circle</span>
+                        Mi Cuenta
+                    </a>
+                    <a href="#agendar" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
+                        <span class="material-icons text-sm">add_circle</span>
+                        Nueva Cita
+                    </a>
+                    <hr class="border-gray-700 my-1">
+                    <button id="dropdown-logout-btn" class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2">
+                        <span class="material-icons text-sm">logout</span>
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </div>
+</header>

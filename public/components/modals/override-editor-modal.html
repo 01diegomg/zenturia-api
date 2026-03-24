@@ -1,0 +1,62 @@
+<!-- Modal: Override/Exception Editor -->
+<div id="override-editor-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-content max-w-2xl override-modal">
+        <button class="close-modal-btn">&times;</button>
+
+        <!-- Header del modal mejorado -->
+        <div class="override-modal-header">
+            <div class="flex items-center gap-3">
+                <div class="override-modal-icon">
+                    <span class="material-icons">edit_calendar</span>
+                </div>
+                <div>
+                    <h3 id="override-modal-title" class="font-display text-2xl mb-1"></h3>
+                    <p class="text-gray-400 text-sm">Personaliza el horario para este día específico</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toggle de día cerrado mejorado -->
+        <div class="day-off-toggle-container">
+            <div class="toggle-switch-wrapper">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="override-day-off-checkbox">
+                    <span class="toggle-slider"></span>
+                </label>
+                <div class="toggle-label">
+                    <span class="material-icons toggle-icon">lock</span>
+                    <div>
+                        <strong class="text-white">Cerrar este día</strong>
+                        <p class="text-sm text-gray-400">No habrá atención al público</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Container de intervalos con diseño mejorado -->
+        <div id="override-intervals-section" class="override-intervals-section">
+            <h4 class="intervals-section-title">
+                <span class="material-icons">access_time</span>
+                Bloques de horario
+            </h4>
+            <div id="override-intervals-container" class="override-intervals-grid"></div>
+
+            <button id="add-override-interval-btn" class="add-interval-btn">
+                <span class="material-icons">add_circle</span>
+                <span>Añadir otro bloque horario</span>
+            </button>
+        </div>
+
+        <!-- Botones de acción mejorados -->
+        <div class="override-modal-actions">
+            <button id="delete-override-btn" class="override-btn override-btn-secondary">
+                <span class="material-icons">restore</span>
+                Restablecer
+            </button>
+            <button id="save-override-btn" class="override-btn override-btn-primary">
+                <span class="material-icons">check_circle</span>
+                Guardar Horario
+            </button>
+        </div>
+    </div>
+</div>

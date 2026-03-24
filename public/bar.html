@@ -13,36 +13,180 @@
 
     <link rel="stylesheet" href="Barber_Fusion.css">
 
+    <!-- DOMPurify for XSS Prevention -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+
 </head>
 <body class="bg-black">
+    <!-- Skip Link para accesibilidad -->
+    <a href="#inicio" class="skip-link">Saltar al contenido principal</a>
 
     <div id="app-container">
-        <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent">
+        <!-- Cintillo Superior -->
+        <div id="top-bar" class="top-bar">
+            <div class="container mx-auto px-4">
+                <div class="top-bar-content">
+                    <!-- Información de contacto -->
+                    <div class="top-bar-left">
+                        <a href="tel:+521234567890" class="top-bar-item" id="top-bar-phone">
+                            <span class="material-icons">phone</span>
+                            <span class="top-bar-text">+52 123 456 7890</span>
+                        </a>
+                        <span class="top-bar-divider hidden md:block">|</span>
+                        <span class="top-bar-item hidden md:flex" id="top-bar-schedule">
+                            <span class="material-icons">schedule</span>
+                            <span class="top-bar-text">Lun - Sáb: 9:00 AM - 7:00 PM</span>
+                        </span>
+                    </div>
+
+                    <!-- Redes sociales -->
+                    <div class="top-bar-right">
+                        <a href="#" class="top-bar-social" id="top-bar-instagram" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="top-bar-social" id="top-bar-facebook" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="top-bar-social" id="top-bar-tiktok" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M9 0h1.98c.144.715.54 1.617 1.235 2.512C12.895 3.389 13.797 4 15 4v2c-1.753 0-3.07-.814-4-1.829V11a5 5 0 1 1-5-5v2a3 3 0 1 0 3 3V0Z"/>
+                            </svg>
+                        </a>
+                        <a href="https://wa.me/521234567890" class="top-bar-whatsapp" id="top-bar-whatsapp" target="_blank" rel="noopener noreferrer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
+                            </svg>
+                            <span>WhatsApp</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <header class="fixed left-0 right-0 z-50 transition-all duration-300 bg-transparent header-with-topbar">
             <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-                <a href="#inicio" class="text-3xl font-display font-bold text-white tracking-widest drop-shadow site-title">BARBER STUDIO CRUZITO</a>
-                <nav id="main-nav" class="flex items-center space-x-6">
+                <a href="#inicio" class="flex items-center gap-3">
+                    <span id="business-logo" class="hidden"></span>
+                    <span class="text-3xl font-display font-bold text-white tracking-widest drop-shadow site-title">Mi Barbería</span>
+                </a>
+
+                <!-- Botón Hamburger para móvil -->
+                <button id="mobile-menu-btn" class="md:hidden flex items-center justify-center w-10 h-10 text-white hover:text-accent transition-colors" aria-label="Abrir menú">
+                    <span class="material-icons text-3xl">menu</span>
+                </button>
+
+                <nav id="main-nav" class="hidden md:flex items-center space-x-6">
                     <a href="#inicio" class="nav-link main-nav-link">INICIO</a>
                     <a href="#sobre" class="nav-link main-nav-link">NOSOTROS</a>
                     <a href="#servicios" class="nav-link main-nav-link">SERVICIOS</a>
                     <a href="#galeria" class="nav-link main-nav-link">GALERÍA</a>
+                    <a href="#testimonios" class="nav-link main-nav-link">RESEÑAS</a>
                     <a href="#ubicacion" class="nav-link main-nav-link">UBICACIÓN</a>
 
                     <a href="#agendar" id="agendar-btn" class="nav-button">AGENDAR</a>
 
-                    <div id="user-menu-container" class="relative">
+                    <!-- Botón "Mis Citas" visible cuando el usuario está logueado -->
+                    <a href="#user-portal-view" id="mis-citas-btn" class="nav-button-secondary hidden">
+                        <span class="material-icons text-sm mr-1">calendar_today</span>
+                        MIS CITAS
+                    </a>
+
+                    <div id="user-menu-container" class="relative hidden">
                         <button id="user-menu-btn" class="nav-button flex items-center gap-2">
+                            <span class="material-icons text-sm mr-1">person</span>
                             <span id="user-menu-name"></span>
                             <span class="material-icons text-sm">expand_more</span>
                         </button>
                         <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] rounded-md shadow-lg py-1 z-50">
-                            <a href="#user-portal-view" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Mi Cuenta</a>
-                            <a href="#agendar" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Agendar Cita</a>
-                            <button id="dropdown-logout-btn" class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700">Cerrar Sesión</button>
+                            <a href="#user-portal-view" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
+                                <span class="material-icons text-sm">account_circle</span>
+                                Mi Cuenta
+                            </a>
+                            <button id="edit-profile-btn" class="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
+                                <span class="material-icons text-sm">edit</span>
+                                Editar Perfil
+                            </button>
+                            <a href="#agendar" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
+                                <span class="material-icons text-sm">add_circle</span>
+                                Nueva Cita
+                            </a>
+                            <hr class="border-gray-700 my-1">
+                            <button id="dropdown-logout-btn" class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2">
+                                <span class="material-icons text-sm">logout</span>
+                                Cerrar Sesión
+                            </button>
                         </div>
                     </div>
                 </nav>
             </div>
         </header>
+
+        <!-- Menú Móvil Overlay -->
+        <div id="mobile-menu-overlay" class="mobile-menu-overlay hidden"></div>
+
+        <!-- Menú Móvil -->
+        <div id="mobile-menu" class="mobile-menu">
+            <div class="mobile-menu-header">
+                <span class="text-xl font-display font-bold text-white site-title">Mi Barbería</span>
+                <button id="mobile-menu-close" class="text-white hover:text-accent transition-colors" aria-label="Cerrar menú">
+                    <span class="material-icons text-3xl">close</span>
+                </button>
+            </div>
+            <nav class="mobile-nav">
+                <a href="#inicio" class="mobile-nav-link">
+                    <span class="material-icons">home</span>
+                    INICIO
+                </a>
+                <a href="#sobre" class="mobile-nav-link">
+                    <span class="material-icons">info</span>
+                    NOSOTROS
+                </a>
+                <a href="#servicios" class="mobile-nav-link">
+                    <span class="material-icons">content_cut</span>
+                    SERVICIOS
+                </a>
+                <a href="#galeria" class="mobile-nav-link">
+                    <span class="material-icons">photo_library</span>
+                    GALERÍA
+                </a>
+                <a href="#testimonios" class="mobile-nav-link">
+                    <span class="material-icons">star</span>
+                    RESEÑAS
+                </a>
+                <a href="#ubicacion" class="mobile-nav-link">
+                    <span class="material-icons">location_on</span>
+                    UBICACIÓN
+                </a>
+
+                <div class="mobile-nav-divider"></div>
+
+                <a href="#agendar" id="mobile-agendar-btn" class="mobile-nav-cta">
+                    <span class="material-icons">calendar_today</span>
+                    AGENDAR CITA
+                </a>
+
+                <!-- Sección de usuario en móvil (visible cuando está logueado) -->
+                <div id="mobile-user-section" class="hidden">
+                    <div class="mobile-nav-divider"></div>
+                    <a href="#user-portal-view" class="mobile-nav-link">
+                        <span class="material-icons">account_circle</span>
+                        MI CUENTA
+                    </a>
+                    <a href="#agendar" class="mobile-nav-link">
+                        <span class="material-icons">add_circle</span>
+                        NUEVA CITA
+                    </a>
+                    <button id="mobile-logout-btn" class="mobile-nav-link text-red-400 w-full text-left">
+                        <span class="material-icons">logout</span>
+                        CERRAR SESIÓN
+                    </button>
+                </div>
+            </nav>
+        </div>
 
         <main id="client-main-view">
             <section id="inicio" class="hero-section h-screen bg-cover bg-center flex items-center justify-center relative">
@@ -83,7 +227,65 @@
                 </div>
             </section>
 
-            <section id="ubicacion" class="py-20 md:py-32 section-bg-alt">
+            <!-- NUEVA SECCIÓN: Testimonios -->
+            <section id="testimonios" class="py-20 md:py-32 testimonials-section section-bg-alt">
+                <div class="container mx-auto px-6">
+                    <!-- Header de la sección -->
+                    <div class="text-center mb-12">
+                        <span class="badge badge-primary mb-4">
+                            <span class="material-icons text-sm">verified</span>
+                            Reseñas Verificadas
+                        </span>
+                        <h2 class="section-title">Lo Que Dicen Nuestros Clientes</h2>
+                        <p class="text-subtle text-lg mt-4 max-w-2xl mx-auto">
+                            La satisfacción de nuestros clientes es nuestra mejor carta de presentación
+                        </p>
+                    </div>
+
+                    <!-- Slider de testimonios -->
+                    <div class="relative">
+                        <div id="testimonials-slider" class="testimonials-slider custom-scrollbar pb-4">
+                            <!-- Los testimonios se cargarán dinámicamente -->
+                        </div>
+
+                        <!-- Controles del slider -->
+                        <button id="testimonial-prev" class="testimonial-nav-btn prev" aria-label="Testimonio anterior">
+                            <span class="material-icons">chevron_left</span>
+                        </button>
+                        <button id="testimonial-next" class="testimonial-nav-btn next" aria-label="Siguiente testimonio">
+                            <span class="material-icons">chevron_right</span>
+                        </button>
+                    </div>
+
+                    <!-- Indicadores del slider -->
+                    <div id="testimonial-dots" class="slider-indicators mt-8"></div>
+
+                    <!-- Badges de confianza -->
+                    <div class="trust-badges">
+                        <div class="trust-badge">
+                            <span class="trust-badge-value" id="trust-clients">500+</span>
+                            <span class="trust-badge-label">Clientes Satisfechos</span>
+                        </div>
+                        <div class="trust-badge">
+                            <span class="trust-badge-value flex items-center gap-1">
+                                <span class="material-icons text-2xl">star</span>
+                                <span id="trust-rating">4.9</span>
+                            </span>
+                            <span class="trust-badge-label">Calificación Promedio</span>
+                        </div>
+                        <div class="trust-badge">
+                            <span class="trust-badge-value" id="trust-years">5+</span>
+                            <span class="trust-badge-label">Años de Experiencia</span>
+                        </div>
+                        <div class="trust-badge">
+                            <span class="trust-badge-value" id="trust-services">10K+</span>
+                            <span class="trust-badge-label">Servicios Realizados</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="ubicacion" class="py-20 md:py-32 section-bg">
                 <div class="container mx-auto px-6">
                     <div class="text-center">
                         <h2 class="section-title">ENCUÉNTRANOS</h2>
@@ -115,9 +317,13 @@
                             <div class="bg-black/80 backdrop-blur-sm p-8 rounded-lg shadow-2xl">
                                 <div class="calendar">
                                     <div class="month-header">
-                                        <button id="user-prev-month-btn">&lt;</button>
-                                        <h2 id="user-month-year"></h2>
-                                        <button id="user-next-month-btn">&gt;</button>
+                                        <button id="user-prev-month-btn" class="calendar-nav-btn">
+                                            <span class="material-icons">chevron_left</span>
+                                        </button>
+                                        <h2 id="user-month-year" class="calendar-month-title"></h2>
+                                        <button id="user-next-month-btn" class="calendar-nav-btn">
+                                            <span class="material-icons">chevron_right</span>
+                                        </button>
                                     </div>
                                     <div class="weekdays">
                                         <div>Dom</div> <div>Lun</div> <div>Mar</div> <div>Mié</div> <div>Jue</div> <div>Vie</div> <div>Sáb</div>
@@ -132,24 +338,83 @@
             
             <section id="user-portal-view" class="hidden py-20 md:py-32 section-bg">
                 <div class="container mx-auto px-6">
-                    <h2 class="section-title text-center">Mi Cuenta</h2>
-                    <div class="grid md:grid-cols-2 gap-12 mt-12">
-                        <div class="portal-section">
-                            <h3 class="portal-section-title">Próximas Citas</h3>
-                            <div id="upcoming-appointments-list" class="space-y-6"></div>
+                    <!-- Header del portal mejorado -->
+                    <div class="text-center mb-12">
+                        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full mb-6 portal-avatar-circle">
+                            <span class="material-icons text-5xl text-accent">account_circle</span>
                         </div>
+                        <h2 class="section-title text-4xl md:text-5xl font-display font-bold mb-4">Mi Portal</h2>
+                        <p id="user-portal-greeting" class="text-subtle text-lg">Gestiona tus citas y revisa tu historial de servicios</p>
+                    </div>
+
+                    <!-- Acciones rápidas -->
+                    <div class="flex flex-wrap justify-center gap-4 mb-12">
+                        <a href="#agendar" class="portal-quick-action">
+                            <span class="material-icons">add_circle</span>
+                            <span>Nueva Cita</span>
+                        </a>
+                        <button id="refresh-appointments-btn" class="portal-quick-action">
+                            <span class="material-icons">refresh</span>
+                            <span>Actualizar</span>
+                        </button>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- Próximas citas -->
                         <div class="portal-section">
-                            <h3 class="portal-section-title">Historial de Servicios</h3>
-                            <div id="past-appointments-list" class="space-y-4"></div>
+                            <div class="portal-section-header">
+                                <h3 class="portal-section-title flex items-center gap-2">
+                                    <span class="material-icons text-accent">event</span>
+                                    Próximas Citas
+                                </h3>
+                                <span id="upcoming-count" class="portal-badge">0</span>
+                            </div>
+                            <div id="upcoming-appointments-list" class="space-y-4"></div>
                         </div>
+
+                        <!-- Historial -->
+                        <div class="portal-section">
+                            <div class="portal-section-header">
+                                <h3 class="portal-section-title flex items-center gap-2">
+                                    <span class="material-icons text-accent">history</span>
+                                    Historial de Servicios
+                                </h3>
+                                <span id="past-count" class="portal-badge">0</span>
+                            </div>
+                            <div id="past-appointments-list" class="space-y-3 max-h-96 overflow-y-auto pr-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Mensaje informativo -->
+                    <div class="mt-12 text-center">
+                        <p class="text-subtle text-sm">
+                            <span class="material-icons text-sm align-middle mr-1">info</span>
+                            Puedes cancelar tus citas hasta 24 horas antes del horario reservado
+                        </p>
                     </div>
                 </div>
             </section>
 
             <footer class="py-12 bg-black text-center text-subtle">
                 <div class="container mx-auto px-6">
-                    <p>&copy; 2025 Punto Citas. Diego, Antonio y Abel .</p>
-                    <a href="#" id="admin-link" class="text-sm mt-2 hover:text-accent transition-colors">Acceso Administrador</a>
+                    <!-- Redes Sociales -->
+                    <div id="social-links-container" class="flex justify-center gap-6 mb-6 hidden">
+                        <a id="social-instagram" href="#" target="_blank" rel="noopener noreferrer" class="text-white hover:text-accent transition-colors hidden" title="Instagram">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        </a>
+                        <a id="social-facebook" href="#" target="_blank" rel="noopener noreferrer" class="text-white hover:text-accent transition-colors hidden" title="Facebook">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        </a>
+                        <a id="social-tiktok" href="#" target="_blank" rel="noopener noreferrer" class="text-white hover:text-accent transition-colors hidden" title="TikTok">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+                        </a>
+                    </div>
+                    <!-- Info del negocio -->
+                    <p class="mb-2">&copy; <span id="current-year">2025</span> <span id="footer-business-name">Mi Barbería</span></p>
+                    <p id="footer-phone-container" class="mb-4 hidden">
+                        <a id="business-phone-link" href="tel:" class="hover:text-accent transition-colors"></a>
+                    </p>
+                    <a href="#" id="admin-link" class="text-sm hover:text-accent transition-colors">Acceso Administrador</a>
                 </div>
             </footer>
         </main>
@@ -160,28 +425,207 @@
                 
                 <div class="login-tabs my-8">
                     <button data-tab="admin-appointments" class="tab-button active">Gestión de Citas</button>
+                    <button data-tab="admin-sales" class="tab-button">Dashboard de Ventas</button>
                     <button data-tab="admin-content" class="tab-button">Editar Contenido</button>
                     <button data-tab="admin-schedule" class="tab-button">Gestor de Horarios</button>
+                    <button data-tab="admin-barbers" class="tab-button">Barberos</button>
+                    <button data-tab="admin-testimonials" class="tab-button">Testimonios</button>
                 </div>
 
                 <div data-tab-content="admin-appointments" class="tab-content active">
                     <section class="py-8">
-                        <div class="admin-dashboard grid md:grid-cols-2 gap-8">
-                            <div class="inbox-container">
-                                <h3 class="text-2xl font-bold mb-4 flex items-center gap-2"><span class="material-icons">inbox</span> Buzón de Citas</h3>
-                                <div id="inbox-list" class="max-h-[400px] overflow-y-auto pr-2"></div>
+                        <!-- Header de sección estilo Dashboard -->
+                        <div class="admin-section-header">
+                            <div class="flex items-center gap-4">
+                                <div class="section-icon">
+                                    <span class="material-icons">calendar_month</span>
+                                </div>
+                                <div class="section-info">
+                                    <h3>Centro de Gestión de Citas</h3>
+                                    <p>Administra las reservaciones y el calendario de tu negocio</p>
+                                </div>
                             </div>
-                            <div class="calendar-container">
-                                 <div class="calendar">
-                                    <div class="month-header">
-                                        <button id="admin-prev-month-btn">&lt;</button>
-                                        <h2 id="admin-month-year"></h2>
-                                        <button id="admin-next-month-btn">&gt;</button>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <!-- Buzón de Citas -->
+                            <div class="admin-card">
+                                <div class="admin-card-header">
+                                    <h4><span class="material-icons">inbox</span> Buzón de Citas Pendientes</h4>
+                                </div>
+                                <div class="admin-card-body">
+                                    <!-- Buscador de citas -->
+                                    <div class="search-container">
+                                        <input type="text"
+                                               id="search-appointments"
+                                               class="search-input"
+                                               placeholder="Buscar por nombre o servicio..."
+                                               aria-label="Buscar citas">
+                                        <span class="material-icons search-icon">search</span>
+                                        <button class="search-clear" id="search-clear-btn" aria-label="Limpiar búsqueda">
+                                            <span class="material-icons">close</span>
+                                        </button>
                                     </div>
-                                    <div class="weekdays">
-                                        <div>Dom</div> <div>Lun</div> <div>Mar</div> <div>Mié</div> <div>Jue</div> <div>Vie</div> <div>Sáb</div>
+                                    <div id="inbox-list" class="max-h-[400px] overflow-y-auto pr-2 space-y-3"></div>
+                                </div>
+                            </div>
+
+                            <!-- Calendario -->
+                            <div class="admin-card">
+                                <div class="admin-card-header">
+                                    <h4><span class="material-icons">event</span> Calendario de Reservaciones</h4>
+                                </div>
+                                <div class="admin-card-body">
+                                    <div class="calendar">
+                                        <div class="month-header">
+                                            <button id="admin-prev-month-btn" class="calendar-nav-btn">
+                                                <span class="material-icons">chevron_left</span>
+                                            </button>
+                                            <h2 id="admin-month-year" class="calendar-month-title"></h2>
+                                            <button id="admin-next-month-btn" class="calendar-nav-btn">
+                                                <span class="material-icons">chevron_right</span>
+                                            </button>
+                                        </div>
+                                        <div class="weekdays">
+                                            <div>Dom</div> <div>Lun</div> <div>Mar</div> <div>Mié</div> <div>Jue</div> <div>Vie</div> <div>Sáb</div>
+                                        </div>
+                                        <div id="admin-calendar-grid" class="calendar-grid"></div>
                                     </div>
-                                    <div id="admin-calendar-grid" class="calendar-grid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Dashboard de Ventas - Diseño Futurista -->
+                <div data-tab-content="admin-sales" class="tab-content">
+                    <section class="py-8">
+                        <!-- Header del Dashboard -->
+                        <div class="sales-dashboard-header">
+                            <div class="flex items-center gap-4">
+                                <div class="sales-icon-container">
+                                    <span class="material-icons text-3xl">trending_up</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white">Centro de Control de Ingresos</h3>
+                                    <p class="text-gray-400">Análisis en tiempo real de tu negocio</p>
+                                </div>
+                            </div>
+                            <div class="sales-date-selector">
+                                <button id="sales-period-today" class="sales-period-btn active">Hoy</button>
+                                <button id="sales-period-week" class="sales-period-btn">Esta Semana</button>
+                                <button id="sales-period-month" class="sales-period-btn">Este Mes</button>
+                            </div>
+                        </div>
+
+                        <!-- Tarjetas de métricas principales -->
+                        <div class="sales-metrics-grid">
+                            <!-- Ganancias del período -->
+                            <div class="sales-metric-card sales-card-primary">
+                                <div class="metric-glow"></div>
+                                <div class="metric-icon-wrapper">
+                                    <span class="material-icons">payments</span>
+                                </div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Ganancias</span>
+                                    <span id="sales-total-earnings" class="metric-value">$0.00</span>
+                                    <span id="sales-earnings-change" class="metric-change positive">
+                                        <span class="material-icons text-sm">arrow_upward</span>
+                                        +0% vs ayer
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Citas completadas -->
+                            <div class="sales-metric-card sales-card-secondary">
+                                <div class="metric-glow"></div>
+                                <div class="metric-icon-wrapper icon-appointments">
+                                    <span class="material-icons">event_available</span>
+                                </div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Citas Completadas</span>
+                                    <span id="sales-completed-appointments" class="metric-value">0</span>
+                                    <span class="metric-subtitle">de <span id="sales-total-appointments">0</span> agendadas</span>
+                                </div>
+                            </div>
+
+                            <!-- Servicio más popular -->
+                            <div class="sales-metric-card sales-card-tertiary">
+                                <div class="metric-glow"></div>
+                                <div class="metric-icon-wrapper icon-popular">
+                                    <span class="material-icons">star</span>
+                                </div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Servicio Estrella</span>
+                                    <span id="sales-top-service" class="metric-value-small">-</span>
+                                    <span id="sales-top-service-count" class="metric-subtitle">0 reservas</span>
+                                </div>
+                            </div>
+
+                            <!-- Clientes nuevos -->
+                            <div class="sales-metric-card sales-card-quaternary">
+                                <div class="metric-glow"></div>
+                                <div class="metric-icon-wrapper icon-clients">
+                                    <span class="material-icons">person_add</span>
+                                </div>
+                                <div class="metric-content">
+                                    <span class="metric-label">Clientes Atendidos</span>
+                                    <span id="sales-total-clients" class="metric-value">0</span>
+                                    <span class="metric-subtitle">clientes únicos</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico y detalles -->
+                        <div class="sales-details-grid">
+                            <!-- Lista de servicios vendidos -->
+                            <div class="sales-breakdown-card">
+                                <div class="breakdown-header">
+                                    <h4 class="flex items-center gap-2">
+                                        <span class="material-icons text-accent">pie_chart</span>
+                                        Desglose por Servicio
+                                    </h4>
+                                </div>
+                                <div id="sales-services-breakdown" class="breakdown-list">
+                                    <p class="text-gray-500 text-center py-4">Cargando datos...</p>
+                                </div>
+                            </div>
+
+                            <!-- Últimas transacciones -->
+                            <div class="sales-transactions-card">
+                                <div class="transactions-header">
+                                    <h4 class="flex items-center gap-2">
+                                        <span class="material-icons text-accent">receipt_long</span>
+                                        Últimas Citas Completadas
+                                    </h4>
+                                </div>
+                                <div id="sales-recent-transactions" class="transactions-list">
+                                    <p class="text-gray-500 text-center py-4">Cargando datos...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen rápido -->
+                        <div class="sales-quick-stats">
+                            <div class="quick-stat">
+                                <span class="material-icons">schedule</span>
+                                <div>
+                                    <span class="quick-stat-value" id="sales-avg-ticket">$0</span>
+                                    <span class="quick-stat-label">Ticket Promedio</span>
+                                </div>
+                            </div>
+                            <div class="quick-stat">
+                                <span class="material-icons">cancel</span>
+                                <div>
+                                    <span class="quick-stat-value" id="sales-cancelled-count">0</span>
+                                    <span class="quick-stat-label">Citas Canceladas</span>
+                                </div>
+                            </div>
+                            <div class="quick-stat">
+                                <span class="material-icons">pending_actions</span>
+                                <div>
+                                    <span class="quick-stat-value" id="sales-pending-count">0</span>
+                                    <span class="quick-stat-label">Citas Pendientes Hoy</span>
                                 </div>
                             </div>
                         </div>
@@ -190,23 +634,127 @@
 
                 <div data-tab-content="admin-content" class="tab-content">
                     <section class="py-8">
+                        <!-- Header de sección estilo Dashboard -->
+                        <div class="admin-section-header mb-8">
+                            <div class="flex items-center gap-4">
+                                <div class="section-icon">
+                                    <span class="material-icons">edit_note</span>
+                                </div>
+                                <div class="section-info">
+                                    <h3>Editor de Contenido</h3>
+                                    <p>Personaliza la apariencia y textos de tu sitio web</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="admin-content-grid">
-                            
+
                             <aside class="admin-sidebar">
                                 <nav>
-                                    <ul class="space-y-2">
-                                        <li><a href="#edit-visual" class="sidebar-link">Identidad Visual</a></li>
-                                        <li><a href="#edit-hero" class="sidebar-link">Sección Principal</a></li>
-                                        <li><a href="#edit-about" class="sidebar-link">Nuestra Esencia</a></li>
-                                        <li><a href="#edit-location" class="sidebar-link">Ubicación</a></li>
-                                        <li><a href="#edit-services" class="sidebar-link">Rituales (Servicios)</a></li>
-                                        <li><a href="#edit-gallery" class="sidebar-link">Galería</a></li>
-                                        <li><a href="#edit-texts" class="sidebar-link">Textos del Sitio</a></li>
+                                    <ul class="space-y-1">
+                                        <li><a href="#edit-business" class="sidebar-link"><span class="material-icons text-sm">store</span> Mi Negocio</a></li>
+                                        <li><a href="#edit-visual" class="sidebar-link"><span class="material-icons text-sm">palette</span> Identidad Visual</a></li>
+                                        <li><a href="#edit-hero" class="sidebar-link"><span class="material-icons text-sm">image</span> Sección Principal</a></li>
+                                        <li><a href="#edit-about" class="sidebar-link"><span class="material-icons text-sm">info</span> Nuestra Esencia</a></li>
+                                        <li><a href="#edit-location" class="sidebar-link"><span class="material-icons text-sm">location_on</span> Ubicación</a></li>
+                                        <li><a href="#edit-services" class="sidebar-link"><span class="material-icons text-sm">content_cut</span> Rituales (Servicios)</a></li>
+                                        <li><a href="#edit-gallery" class="sidebar-link"><span class="material-icons text-sm">photo_library</span> Galería</a></li>
+                                        <li><a href="#edit-texts" class="sidebar-link"><span class="material-icons text-sm">text_fields</span> Textos del Sitio</a></li>
                                     </ul>
                                 </nav>
                             </aside>
                 
                             <main class="admin-main-content">
+                                <!-- Sección Mi Negocio -->
+                                <section id="edit-business" class="portal-section mb-8">
+                                    <div class="admin-card-header">
+                                        <h3 class="portal-section-title flex items-center gap-3"><span class="material-icons">store</span>Configuración del Negocio</h3>
+                                    </div>
+                                    <div class="mt-6 space-y-6">
+                                        <!-- Información básica -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div class="form-group">
+                                                <label for="edit-business-name" class="flex items-center gap-2">
+                                                    <span class="material-icons text-accent text-sm">badge</span>
+                                                    Nombre del Negocio
+                                                </label>
+                                                <input type="text" id="edit-business-name" class="portal-input" placeholder="Ej: Barbería El Estilo">
+                                                <p class="text-gray-500 text-sm mt-1">Aparece en el encabezado y título del sitio</p>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="edit-business-logo" class="flex items-center gap-2">
+                                                    <span class="material-icons text-accent text-sm">image</span>
+                                                    Logo (URL)
+                                                </label>
+                                                <input type="text" id="edit-business-logo" class="portal-input" placeholder="https://ejemplo.com/logo.png">
+                                                <p class="text-gray-500 text-sm mt-1">Opcional - URL de tu logo</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Contacto -->
+                                        <div class="border-t border-gray-700 pt-6">
+                                            <h4 class="text-white font-semibold mb-4 flex items-center gap-2">
+                                                <span class="material-icons text-accent">contact_phone</span>
+                                                Información de Contacto
+                                            </h4>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div class="form-group">
+                                                    <label for="edit-business-phone">Teléfono</label>
+                                                    <input type="tel" id="edit-business-phone" class="portal-input" placeholder="+52 771 123 4567">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="edit-business-whatsapp" class="flex items-center gap-2">
+                                                        <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                                        WhatsApp
+                                                    </label>
+                                                    <input type="tel" id="edit-business-whatsapp" class="portal-input" placeholder="+52 771 123 4567">
+                                                    <p class="text-gray-500 text-sm mt-1">Habilita el botón flotante de WhatsApp</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Redes sociales -->
+                                        <div class="border-t border-gray-700 pt-6">
+                                            <h4 class="text-white font-semibold mb-4 flex items-center gap-2">
+                                                <span class="material-icons text-accent">share</span>
+                                                Redes Sociales
+                                            </h4>
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                <div class="form-group">
+                                                    <label for="edit-social-instagram" class="flex items-center gap-2">
+                                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                                                        Instagram
+                                                    </label>
+                                                    <input type="text" id="edit-social-instagram" class="portal-input" placeholder="@tu_barberia">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="edit-social-facebook" class="flex items-center gap-2">
+                                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                                        Facebook
+                                                    </label>
+                                                    <input type="text" id="edit-social-facebook" class="portal-input" placeholder="tu_pagina">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="edit-social-tiktok" class="flex items-center gap-2">
+                                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+                                                        TikTok
+                                                    </label>
+                                                    <input type="text" id="edit-social-tiktok" class="portal-input" placeholder="@tu_barberia">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-8 text-right">
+                                            <button id="save-business-btn" class="modal-button !w-auto px-6 py-3">
+                                                <span class="flex items-center gap-2">
+                                                    <span class="material-icons">save</span>
+                                                    Guardar Configuración
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </section>
+
                                 <section id="edit-visual" class="portal-section mb-8">
                                     <div class="admin-card-header">
                                         <h3 class="portal-section-title flex items-center gap-3"><span class="material-icons">palette</span>Identidad Visual</h3>
@@ -299,8 +847,12 @@
                                             <textarea id="edit-location-schedule" rows="3" class="portal-input" placeholder="Usa <br> para saltos de línea"></textarea>
                                         </div>
                                         <div class="form-group">
-                                            <label for="edit-location-map">URL del Mapa de Google Maps</label>
-                                            <input type="text" id="edit-location-map" class="portal-input" placeholder="Pega aquí el enlace 'embed' del mapa">
+                                            <label for="edit-location-map">URL del Mapa de Google Maps (Embed)</label>
+                                            <input type="text" id="edit-location-map" class="portal-input" placeholder="https://www.google.com/maps/embed?pb=...">
+                                            <p class="text-gray-500 text-sm mt-2">
+                                                <span class="material-icons text-xs align-middle">info</span>
+                                                Para obtener la URL: Abre Google Maps → Busca tu ubicación → Clic en "Compartir" → "Incorporar un mapa" → Copia solo la URL del atributo src del iframe.
+                                            </p>
                                         </div>
                                         <button id="save-location-btn" class="modal-button">Guardar Cambios de Ubicación</button>
                                     </div>
@@ -344,40 +896,322 @@
                 </div>
                 <div data-tab-content="admin-schedule" class="tab-content">
                     <section class="py-8">
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                            <div class="portal-section">
-                                <h3 class="portal-section-title">Tu Horario Semanal Base</h3>
-                                <p class="text-gray-400 mb-6">Este es el horario que se aplicará por defecto cada semana.</p>
-                                <div id="schedule-editor-container" class="space-y-4"></div>
-                                <button id="save-schedule-btn" class="modal-button mt-8">Guardar Horario Semanal</button>
+                        <!-- Header de sección estilo Dashboard -->
+                        <div class="admin-section-header">
+                            <div class="flex items-center gap-4">
+                                <div class="section-icon">
+                                    <span class="material-icons">schedule</span>
+                                </div>
+                                <div class="section-info">
+                                    <h3>Gestor de Horarios</h3>
+                                    <p>Configura tu disponibilidad semanal y días especiales</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de ayuda/guía mejorada -->
+                        <div class="admin-card mb-8">
+                            <div class="admin-card-body flex items-start gap-4">
+                                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                    <span class="material-icons text-blue-400">lightbulb</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-white mb-1">¿Cómo funciona?</h4>
+                                    <p class="text-sm text-gray-400">Define tu horario semanal habitual en el panel izquierdo. Usa el calendario de la derecha para marcar excepciones como vacaciones, festivos o días con horarios especiales.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Panel Izquierdo: Horario Semanal -->
+                            <div class="portal-section schedule-section">
+                                <div class="schedule-header">
+                                    <div>
+                                        <h3 class="portal-section-title flex items-center gap-2">
+                                            <span class="material-icons text-accent">schedule</span>
+                                            Horario Semanal
+                                        </h3>
+                                        <p class="text-gray-400 text-sm mt-2">Tu horario habitual de lunes a domingo</p>
+                                    </div>
+                                    <button id="quick-schedule-btn" class="quick-action-btn">
+                                        <span class="material-icons">flash_on</span>
+                                        Atajos Rápidos
+                                    </button>
+                                </div>
+
+                                <!-- Atajos Rápidos (desplegable) -->
+                                <div id="quick-schedule-menu" class="quick-schedule-menu hidden">
+                                    <button class="quick-preset-btn" data-preset="weekdays">
+                                        <span class="material-icons">business_center</span>
+                                        <div>
+                                            <strong>Lunes a Viernes</strong>
+                                            <span>9:00 AM - 6:00 PM</span>
+                                        </div>
+                                    </button>
+                                    <button class="quick-preset-btn" data-preset="everyday">
+                                        <span class="material-icons">calendar_today</span>
+                                        <div>
+                                            <strong>Todos los días</strong>
+                                            <span>10:00 AM - 8:00 PM</span>
+                                        </div>
+                                    </button>
+                                    <button class="quick-preset-btn" data-preset="weekends-off">
+                                        <span class="material-icons">weekend</span>
+                                        <div>
+                                            <strong>Cerrar Fines de Semana</strong>
+                                            <span>Solo Lun-Vie</span>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <!-- Container de días de la semana -->
+                                <div id="schedule-editor-container" class="schedule-days-grid"></div>
+
+                                <button id="save-schedule-btn" class="modal-button mt-8 save-schedule-btn">
+                                    <span class="material-icons">save</span>
+                                    Guardar Horario Semanal
+                                </button>
                             </div>
 
-                            <div class="portal-section">
-                                <h3 class="portal-section-title">Excepciones y Días Especiales</h3>
-                                <p class="text-gray-400 mb-6">Haz clic en un día del calendario para definir un horario único para esa fecha o para marcarlo como cerrado.</p>
-                                <div class="calendar">
+                            <!-- Panel Derecho: Excepciones -->
+                            <div class="portal-section schedule-section">
+                                <div class="schedule-header">
+                                    <div>
+                                        <h3 class="portal-section-title flex items-center gap-2">
+                                            <span class="material-icons text-accent">event_busy</span>
+                                            Excepciones y Días Especiales
+                                        </h3>
+                                        <p class="text-gray-400 text-sm mt-2">Marca días cerrados o con horarios especiales</p>
+                                    </div>
+                                </div>
+
+                                <div class="calendar enhanced-calendar">
                                     <div class="month-header">
-                                        <button id="override-prev-month-btn">&lt;</button>
-                                        <h2 id="override-month-year"></h2>
-                                        <button id="override-next-month-btn">&gt;</button>
+                                        <button id="override-prev-month-btn" class="calendar-nav-btn">
+                                            <span class="material-icons">chevron_left</span>
+                                        </button>
+                                        <h2 id="override-month-year" class="calendar-month-title"></h2>
+                                        <button id="override-next-month-btn" class="calendar-nav-btn">
+                                            <span class="material-icons">chevron_right</span>
+                                        </button>
                                     </div>
                                     <div class="weekdays">
                                         <div>Dom</div> <div>Lun</div> <div>Mar</div> <div>Mié</div> <div>Jue</div> <div>Vie</div> <div>Sáb</div>
                                     </div>
-                                    <div id="override-calendar-grid" class="calendar-grid"></div>
+                                    <div id="override-calendar-grid" class="calendar-grid enhanced-grid"></div>
                                 </div>
-                                 <p class="text-xs text-gray-500 mt-4"><span class="inline-block w-3 h-3 bg-cyan-500 rounded-full mr-2"></span>Días con horario especial</p>
+
+                                <!-- Leyenda mejorada -->
+                                <div class="calendar-legend">
+                                    <h4 class="legend-title">Leyenda:</h4>
+                                    <div class="legend-items">
+                                        <div class="legend-item">
+                                            <span class="legend-badge badge-closed">
+                                                <span class="material-icons">close</span>
+                                            </span>
+                                            <span>Día cerrado</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <span class="legend-badge badge-special">
+                                                <span class="material-icons">schedule</span>
+                                            </span>
+                                            <span>Horario especial</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <span class="legend-badge badge-normal">
+                                                <span class="material-icons">check</span>
+                                            </span>
+                                            <span>Horario normal</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Tab: Gestión de Barberos -->
+                <div data-tab-content="admin-barbers" class="tab-content">
+                    <section class="py-8">
+                        <div class="admin-section-header">
+                            <div class="flex items-center gap-4">
+                                <div class="section-icon">
+                                    <span class="material-icons">content_cut</span>
+                                </div>
+                                <div class="section-info">
+                                    <h3>Gestión de Barberos</h3>
+                                    <p>Administra tu equipo de barberos y sus horarios</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mb-6">
+                            <button id="add-barber-btn" class="btn-primary flex items-center gap-2">
+                                <span class="material-icons">person_add</span>
+                                Agregar Barbero
+                            </button>
+                        </div>
+
+                        <div id="barbers-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Los barberos se cargarán dinámicamente -->
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Tab: Gestión de Testimonios -->
+                <div data-tab-content="admin-testimonials" class="tab-content">
+                    <section class="py-8">
+                        <div class="admin-section-header">
+                            <div class="flex items-center gap-4">
+                                <div class="section-icon">
+                                    <span class="material-icons">format_quote</span>
+                                </div>
+                                <div class="section-info">
+                                    <h3>Gestión de Testimonios</h3>
+                                    <p>Administra las reseñas de tus clientes</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mb-6">
+                            <button id="add-testimonial-btn" class="btn-primary flex items-center gap-2">
+                                <span class="material-icons">add_comment</span>
+                                Agregar Testimonio
+                            </button>
+                        </div>
+
+                        <div id="testimonials-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Los testimonios se cargarán dinámicamente -->
                         </div>
                     </section>
                 </div>
             </div>
         </main>
     </div>
-    
+
+    <!-- Modal: Editor de Barbero -->
+    <div id="barber-editor-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-lg">
+            <button class="close-modal-btn">&times;</button>
+            <h3 id="barber-editor-title" class="font-display text-2xl mb-6">Nuevo Barbero</h3>
+
+            <form id="barber-editor-form">
+                <input type="hidden" id="barber-editor-id">
+
+                <div class="form-group">
+                    <label for="barber-editor-name">Nombre del Barbero *</label>
+                    <input type="text" id="barber-editor-name" class="portal-input" required placeholder="Ej: Carlos Rodríguez">
+                </div>
+
+                <div class="form-group">
+                    <label for="barber-editor-photo">URL de Foto</label>
+                    <input type="url" id="barber-editor-photo" class="portal-input" placeholder="https://ejemplo.com/foto.jpg">
+                    <p class="text-xs text-gray-500 mt-1">Deja vacío para usar avatar por defecto</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Servicios que ofrece</label>
+                    <div id="barber-specialties-checkboxes" class="grid grid-cols-1 gap-2 mt-2">
+                        <!-- Los checkboxes de servicios se generarán dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="barber-editor-active" checked class="form-checkbox">
+                        <span>Barbero activo</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1">Los barberos inactivos no aparecerán en el sistema de reservas</p>
+                </div>
+
+                <div class="flex gap-4 mt-6">
+                    <button type="button" id="barber-editor-cancel" class="flex-1 btn-secondary">Cancelar</button>
+                    <button type="submit" id="barber-editor-submit" class="flex-1 btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Horario del Barbero -->
+    <div id="barber-schedule-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-2xl">
+            <button class="close-modal-btn">&times;</button>
+            <h3 id="barber-schedule-title" class="font-display text-2xl mb-6">Horario de Trabajo</h3>
+
+            <div id="barber-schedule-editor" class="space-y-4">
+                <!-- El editor de horarios se generará dinámicamente -->
+            </div>
+
+            <div class="flex gap-4 mt-6">
+                <button type="button" id="barber-schedule-cancel" class="flex-1 btn-secondary">Cancelar</button>
+                <button type="button" id="barber-schedule-save" class="flex-1 btn-primary">Guardar Horario</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editor de Testimonio -->
+    <div id="testimonial-editor-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-lg">
+            <button class="close-modal-btn">&times;</button>
+            <h3 id="testimonial-editor-title" class="font-display text-2xl mb-6">Nuevo Testimonio</h3>
+
+            <form id="testimonial-editor-form">
+                <input type="hidden" id="testimonial-editor-id">
+
+                <div class="form-group">
+                    <label for="testimonial-editor-name">Nombre del Cliente *</label>
+                    <input type="text" id="testimonial-editor-name" class="portal-input" required placeholder="Ej: Juan Pérez">
+                </div>
+
+                <div class="form-group">
+                    <label for="testimonial-editor-text">Testimonio *</label>
+                    <textarea id="testimonial-editor-text" class="portal-input" rows="4" required placeholder="Escribe el testimonio del cliente..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="testimonial-editor-rating">Calificación</label>
+                    <div id="testimonial-rating-stars" class="flex gap-2 mt-2">
+                        <button type="button" class="star-btn text-3xl text-gray-400 hover:text-yellow-500 transition-colors" data-rating="1">★</button>
+                        <button type="button" class="star-btn text-3xl text-gray-400 hover:text-yellow-500 transition-colors" data-rating="2">★</button>
+                        <button type="button" class="star-btn text-3xl text-gray-400 hover:text-yellow-500 transition-colors" data-rating="3">★</button>
+                        <button type="button" class="star-btn text-3xl text-gray-400 hover:text-yellow-500 transition-colors" data-rating="4">★</button>
+                        <button type="button" class="star-btn text-3xl text-yellow-500" data-rating="5">★</button>
+                    </div>
+                    <input type="hidden" id="testimonial-editor-rating" value="5">
+                </div>
+
+                <div class="form-group">
+                    <label for="testimonial-editor-avatar">URL de Avatar</label>
+                    <input type="url" id="testimonial-editor-avatar" class="portal-input" placeholder="https://ejemplo.com/avatar.jpg">
+                    <p class="text-xs text-gray-500 mt-1">Deja vacío para usar avatar por defecto</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="testimonial-editor-verified" class="form-checkbox">
+                        <span>Cliente verificado</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="testimonial-editor-active" checked class="form-checkbox">
+                        <span>Testimonio activo</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1">Los testimonios inactivos no se mostrarán en la página</p>
+                </div>
+
+                <div class="flex gap-4 mt-6">
+                    <button type="button" id="testimonial-editor-cancel" class="flex-1 btn-secondary">Cancelar</button>
+                    <button type="submit" id="testimonial-editor-submit" class="flex-1 btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="admin-login-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="admin-login-title">
         <div class="modal-content">
-            <button class="close-modal-btn">&times;</button>
+            <button class="close-modal-btn" aria-label="Cerrar modal">&times;</button>
             <h3 id="admin-login-title" class="font-display text-2xl mb-4">Acceso Administrador</h3>
             <div class="form-group">
                 <label for="admin-user">Usuario</label>
@@ -391,21 +1225,43 @@
         </div>
     </div>
 
-    <div id="booking-modal-container" class="modal-overlay hidden" role="dialog"aria-modal="true" aria-labelledby="modal-title">
-        <div class="modal-content">
+    <div id="booking-modal-container" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-content max-w-2xl">
             <button class="close-modal-btn">&times;</button>
-            <h3 id="modal-title" class="font-display"></h3>
+            <h3 id="modal-title" class="font-display text-2xl mb-4"></h3>
             <div id="booking-step-1">
-                <p class="text-gray-300 mb-4">Completa los siguientes pasos para tu reserva.</p>
-                <div class="form-group">
-                    <label class="text-gray-300 font-semibold">1. Elige tu Ritual:</label>
-                    <div id="service-selection-container" class="space-y-3 mt-2"></div>
+                <p class="text-gray-300 mb-6">Completa los siguientes pasos para tu reserva.</p>
+
+                <!-- Paso 1: Seleccionar Barbero -->
+                <div class="form-group mb-6">
+                    <label class="text-gray-300 font-semibold flex items-center gap-2 mb-3">
+                        <span class="step-number">1</span>
+                        Selecciona tu Barbero
+                    </label>
+                    <div id="barber-selection-container" class="barber-selection-grid">
+                        <!-- Los barberos se cargarán dinámicamente -->
+                    </div>
                 </div>
-                 <div class="form-group">
-                    <label class="text-gray-300 font-semibold">2. Elige tu Hora:</label>
-                    <div id="time-slots-container" class="time-slots mt-2"></div>
+
+                <!-- Paso 2: Seleccionar Servicio (oculto hasta seleccionar barbero) -->
+                <div id="service-section" class="form-group mb-6 hidden">
+                    <label class="text-gray-300 font-semibold flex items-center gap-2 mb-3">
+                        <span class="step-number">2</span>
+                        Elige tu Servicio
+                    </label>
+                    <div id="service-selection-container" class="space-y-3"></div>
                 </div>
-                 <button id="booking-next-btn" class="modal-button mt-4" disabled>Siguiente</button>
+
+                <!-- Paso 3: Seleccionar Hora (oculto hasta seleccionar servicio) -->
+                <div id="time-section" class="form-group mb-6 hidden">
+                    <label class="text-gray-300 font-semibold flex items-center gap-2 mb-3">
+                        <span class="step-number">3</span>
+                        Elige tu Hora
+                    </label>
+                    <div id="time-slots-container" class="time-slots"></div>
+                </div>
+
+                <button id="booking-next-btn" class="modal-button mt-4" disabled>Siguiente</button>
             </div>
             <div id="booking-step-2" class="hidden">
                 <div id="client-login-view">
@@ -435,7 +1291,27 @@
                     </div>
                     <div class="form-group">
                         <label for="register-password">Crea una Contraseña</label>
-                        <input type="password" id="register-password" class="portal-input">
+                        <input type="password" id="register-password" class="portal-input" aria-describedby="password-requirements">
+                        <div id="password-strength-container" class="password-strength-container hidden">
+                            <div class="password-strength-bar">
+                                <div id="password-strength-fill" class="password-strength-fill"></div>
+                            </div>
+                            <span id="password-strength-text" class="password-strength-text"></span>
+                        </div>
+                        <div id="password-requirements" class="password-requirements hidden">
+                            <div class="password-requirement" data-req="length">
+                                <span class="material-icons">radio_button_unchecked</span>
+                                <span>Mínimo 8 caracteres</span>
+                            </div>
+                            <div class="password-requirement" data-req="lowercase">
+                                <span class="material-icons">radio_button_unchecked</span>
+                                <span>Una letra minúscula</span>
+                            </div>
+                            <div class="password-requirement" data-req="number">
+                                <span class="material-icons">radio_button_unchecked</span>
+                                <span>Un número</span>
+                            </div>
+                        </div>
                     </div>
                     <button id="client-register-btn" class="modal-button">Registrarse y Confirmar</button>
                     <p class="text-center my-4 text-gray-500">o</p>
@@ -522,23 +1398,63 @@
     </div>
     
     <div id="override-editor-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
-        <div class="modal-content max-w-2xl">
+        <div class="modal-content max-w-2xl override-modal">
             <button class="close-modal-btn">&times;</button>
-            <h3 id="override-modal-title" class="font-display text-2xl mb-4"></h3>
-            <div class="form-group">
-                <label class="flex items-center gap-3">
-                    <input type="checkbox" id="override-day-off-checkbox" class="h-5 w-5 rounded">
-                    <span class="font-semibold text-white">Marcar este día como cerrado</span>
-                </label>
-            </div>
-            <div id="override-intervals-container" class="space-y-3 mt-4">
+
+            <!-- Header del modal mejorado -->
+            <div class="override-modal-header">
+                <div class="flex items-center gap-3">
+                    <div class="override-modal-icon">
+                        <span class="material-icons">edit_calendar</span>
+                    </div>
+                    <div>
+                        <h3 id="override-modal-title" class="font-display text-2xl mb-1"></h3>
+                        <p class="text-gray-400 text-sm">Personaliza el horario para este día específico</p>
+                    </div>
                 </div>
-            <button id="add-override-interval-btn" class="mt-4 text-green-400 font-semibold flex items-center gap-2">
-                <span class="material-icons">add_circle</span> Añadir otro bloque horario
-            </button>
-            <div class="flex gap-4 mt-8">
-                <button id="save-override-btn" class="modal-button flex-1">Guardar Horario del Día</button>
-                <button id="delete-override-btn" class="modal-button !bg-red-800 hover:!bg-red-900 flex-1">Restablecer a Horario Semanal</button>
+            </div>
+
+            <!-- Toggle de día cerrado mejorado -->
+            <div class="day-off-toggle-container">
+                <div class="toggle-switch-wrapper">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="override-day-off-checkbox">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <div class="toggle-label">
+                        <span class="material-icons toggle-icon">lock</span>
+                        <div>
+                            <strong class="text-white">Cerrar este día</strong>
+                            <p class="text-sm text-gray-400">No habrá atención al público</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Container de intervalos con diseño mejorado -->
+            <div id="override-intervals-section" class="override-intervals-section">
+                <h4 class="intervals-section-title">
+                    <span class="material-icons">access_time</span>
+                    Bloques de horario
+                </h4>
+                <div id="override-intervals-container" class="override-intervals-grid"></div>
+
+                <button id="add-override-interval-btn" class="add-interval-btn">
+                    <span class="material-icons">add_circle</span>
+                    <span>Añadir otro bloque horario</span>
+                </button>
+            </div>
+
+            <!-- Botones de acción mejorados -->
+            <div class="override-modal-actions">
+                <button id="delete-override-btn" class="override-btn override-btn-secondary">
+                    <span class="material-icons">restore</span>
+                    Restablecer
+                </button>
+                <button id="save-override-btn" class="override-btn override-btn-primary">
+                    <span class="material-icons">check_circle</span>
+                    Guardar Horario
+                </button>
             </div>
         </div>
     </div>
@@ -551,10 +1467,173 @@
     </div>
     <div id="toast-container"></div>
 
-        <a href="#inicio" id="back-to-top-btn" class="back-to-top-btn" aria-label="Volver arriba">
-        <span class="material-icons">arrow_upward</span> </a>
+    <!-- Botón Flotante de WhatsApp -->
+    <a id="whatsapp-float-btn" href="#" target="_blank" rel="noopener noreferrer" class="whatsapp-float-btn hidden" title="Contáctanos por WhatsApp">
+        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+    </a>
 
-    <div id="toast-container"></div>
+    <!-- Botón de Volver Arriba -->
+    <a href="#inicio" id="back-to-top-btn" class="back-to-top-btn" aria-label="Volver arriba">
+        <span class="material-icons">arrow_upward</span>
+    </a>
+
+    <!-- Modal del Wizard de Configuración Inicial -->
+    <div id="setup-wizard-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="wizard-title">
+        <div class="modal-content max-w-2xl setup-wizard">
+            <div class="wizard-header text-center mb-8">
+                <div class="wizard-icon">
+                    <span class="material-icons text-5xl text-accent">store</span>
+                </div>
+                <h2 id="wizard-title" class="font-display text-3xl text-white mt-4">Configura tu Negocio</h2>
+                <p class="text-gray-400 mt-2">Completa la información básica para personalizar tu sitio web</p>
+            </div>
+
+            <div id="wizard-step-1" class="wizard-step">
+                <div class="space-y-6">
+                    <div class="form-group">
+                        <label for="wizard-business-name" class="text-white font-semibold flex items-center gap-2">
+                            <span class="material-icons text-accent text-sm">badge</span>
+                            Nombre de tu Negocio *
+                        </label>
+                        <input type="text" id="wizard-business-name" class="portal-input" placeholder="Ej: Barbería El Estilo" required>
+                        <p class="text-gray-500 text-sm mt-1">Este nombre aparecerá en el encabezado y el título de la página</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wizard-phone" class="text-white font-semibold flex items-center gap-2">
+                            <span class="material-icons text-accent text-sm">phone</span>
+                            Teléfono (Opcional)
+                        </label>
+                        <input type="tel" id="wizard-phone" class="portal-input" placeholder="Ej: +52 771 123 4567">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wizard-whatsapp" class="text-white font-semibold flex items-center gap-2">
+                            <svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            WhatsApp (Opcional)
+                        </label>
+                        <input type="tel" id="wizard-whatsapp" class="portal-input" placeholder="Ej: +52 771 123 4567">
+                        <p class="text-gray-500 text-sm mt-1">Se mostrará un botón flotante para contacto rápido</p>
+                    </div>
+                </div>
+
+                <button id="wizard-next-btn" class="modal-button mt-8 flex items-center justify-center gap-2">
+                    Siguiente
+                    <span class="material-icons">arrow_forward</span>
+                </button>
+            </div>
+
+            <div id="wizard-step-2" class="wizard-step hidden">
+                <h3 class="text-xl text-white font-semibold mb-6 flex items-center gap-2">
+                    <span class="material-icons text-accent">share</span>
+                    Redes Sociales (Opcional)
+                </h3>
+
+                <div class="space-y-4">
+                    <div class="form-group">
+                        <label for="wizard-instagram" class="text-white flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                            Instagram
+                        </label>
+                        <input type="text" id="wizard-instagram" class="portal-input" placeholder="@tu_barberia o URL completa">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wizard-facebook" class="text-white flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            Facebook
+                        </label>
+                        <input type="text" id="wizard-facebook" class="portal-input" placeholder="tu_pagina o URL completa">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wizard-tiktok" class="text-white flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+                            TikTok
+                        </label>
+                        <input type="text" id="wizard-tiktok" class="portal-input" placeholder="@tu_barberia o URL completa">
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mt-8">
+                    <button id="wizard-back-btn" class="modal-button-secondary flex-1 flex items-center justify-center gap-2">
+                        <span class="material-icons">arrow_back</span>
+                        Atrás
+                    </button>
+                    <button id="wizard-finish-btn" class="modal-button flex-1 flex items-center justify-center gap-2">
+                        <span class="material-icons">check</span>
+                        Finalizar Configuración
+                    </button>
+                </div>
+            </div>
+
+            <div id="wizard-step-success" class="wizard-step hidden text-center">
+                <div class="success-animation mb-6">
+                    <span class="material-icons text-6xl text-green-500">check_circle</span>
+                </div>
+                <h3 class="text-2xl text-white font-display mb-4">¡Configuración Completada!</h3>
+                <p class="text-gray-400 mb-8">Tu sitio web está listo. Puedes modificar esta información en cualquier momento desde el panel de administración.</p>
+                <button id="wizard-close-btn" class="modal-button">
+                    Comenzar a usar mi sitio
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edición de Perfil -->
+    <div id="profile-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-md">
+            <button class="close-modal-btn">&times;</button>
+            <h3 class="font-display text-2xl mb-6">Mi Perfil</h3>
+
+            <form id="profile-form">
+                <div class="form-group">
+                    <label for="profile-name">Nombre Completo</label>
+                    <input type="text" id="profile-name" class="portal-input" placeholder="Tu nombre">
+                </div>
+
+                <div class="form-group">
+                    <label for="profile-email">Correo Electrónico</label>
+                    <input type="email" id="profile-email" class="portal-input" disabled>
+                    <p class="text-xs text-gray-500 mt-1">El correo no se puede cambiar</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="profile-phone">Teléfono</label>
+                    <input type="tel" id="profile-phone" class="portal-input" placeholder="Ej: +52 123 456 7890">
+                </div>
+
+                <hr class="border-gray-700 my-6">
+
+                <h4 class="text-lg font-semibold mb-4">Cambiar Contraseña</h4>
+                <p class="text-sm text-gray-500 mb-4">Deja los campos vacíos si no deseas cambiar tu contraseña</p>
+
+                <div class="form-group">
+                    <label for="profile-current-password">Contraseña Actual</label>
+                    <input type="password" id="profile-current-password" class="portal-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="profile-new-password">Nueva Contraseña</label>
+                    <input type="password" id="profile-new-password" class="portal-input">
+                    <div id="profile-password-requirements" class="password-requirements hidden mt-2">
+                        <div class="password-requirement" data-req="length">
+                            <span class="material-icons">radio_button_unchecked</span>
+                            <span>Mínimo 8 caracteres</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mt-6">
+                    <button type="button" id="profile-cancel-btn" class="flex-1 btn-secondary">Cancelar</button>
+                    <button type="submit" id="profile-submit-btn" class="flex-1 btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module" src="main.js"></script>
 
 </body>

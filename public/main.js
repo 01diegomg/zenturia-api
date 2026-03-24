@@ -6,6 +6,8 @@ import * as client from './client.js';
 import * as auth from './auth.js';
 import * as admin from './admin.js';
 import { API_BASE_URL } from './config.js';
+import { authFetch } from './auth.js';
+import router from './router.js';
 
 /**
  * El estado global de la aplicación. Centraliza todos los datos dinámicos.
@@ -27,11 +29,45 @@ export let state = {
 
 function handleHeaderScroll() {
   const header = document.querySelector('header');
+  const topBar = document.getElementById('top-bar');
   if (!header) return;
+
   if (window.scrollY > 50) {
     header.classList.add('header-scrolled');
+    // Ocultar cintillo y ajustar header cuando se hace scroll
+    if (topBar) {
+      topBar.classList.add('top-bar-hidden');
+      header.style.top = '0';
+    }
   } else {
     header.classList.remove('header-scrolled');
+    // Mostrar cintillo y ajustar header (solo si no está en vista admin)
+    if (topBar && !topBar.classList.contains('admin-hidden')) {
+      topBar.classList.remove('top-bar-hidden');
+      header.style.top = '37px';
+    }
+  }
+}
+
+/**
+ * Oculta o muestra el cintillo según la vista (admin/cliente)
+ */
+export function toggleTopBarForView(isAdmin) {
+  const topBar = document.getElementById('top-bar');
+  const header = document.querySelector('header');
+  if (!topBar || !header) return;
+
+  if (isAdmin) {
+    topBar.classList.add('top-bar-hidden', 'admin-hidden');
+    header.style.top = '0';
+    header.classList.remove('header-with-topbar');
+  } else {
+    topBar.classList.remove('admin-hidden');
+    header.classList.add('header-with-topbar');
+    if (window.scrollY <= 50) {
+      topBar.classList.remove('top-bar-hidden');
+      header.style.top = '37px';
+    }
   }
 }
 
@@ -64,6 +100,78 @@ function handleBackToTopButton() {
 }
 
 /**
+ * Configura el menú móvil hamburger
+ */
+function setupMobileMenu() {
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuClose = document.getElementById('mobile-menu-close');
+    const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+    const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+    const mobileAgendarBtn = document.getElementById('mobile-agendar-btn');
+    const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
+
+    function openMobileMenu() {
+        mobileMenu?.classList.add('open');
+        mobileMenuOverlay?.classList.add('active');
+        document.body.classList.add('mobile-menu-open');
+    }
+
+    function closeMobileMenu() {
+        mobileMenu?.classList.remove('open');
+        mobileMenuOverlay?.classList.remove('active');
+        document.body.classList.remove('mobile-menu-open');
+    }
+
+    // Abrir menú
+    mobileMenuBtn?.addEventListener('click', openMobileMenu);
+
+    // Cerrar menú con botón X
+    mobileMenuClose?.addEventListener('click', closeMobileMenu);
+
+    // Cerrar menú al hacer clic en overlay
+    mobileMenuOverlay?.addEventListener('click', closeMobileMenu);
+
+    // Cerrar menú al hacer clic en un link de navegación
+    mobileNavLinks.forEach(link => {
+        link.addEventListener('click', closeMobileMenu);
+    });
+
+    // Cerrar menú al hacer clic en el botón de agendar
+    mobileAgendarBtn?.addEventListener('click', closeMobileMenu);
+
+    // Logout desde móvil
+    mobileLogoutBtn?.addEventListener('click', () => {
+        closeMobileMenu();
+        auth.handleLogout();
+    });
+
+    // Cerrar con tecla Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && mobileMenu?.classList.contains('open')) {
+            closeMobileMenu();
+        }
+    });
+
+    // Actualizar visibilidad de la sección de usuario en móvil
+    updateMobileUserSection();
+}
+
+/**
+ * Actualiza la sección de usuario en el menú móvil
+ */
+export function updateMobileUserSection() {
+    const mobileUserSection = document.getElementById('mobile-user-section');
+    if (mobileUserSection) {
+        if (state.currentUser) {
+            mobileUserSection.classList.remove('hidden');
+        } else {
+            mobileUserSection.classList.add('hidden');
+        }
+    }
+}
+
+/**
  * Configura todos los event listeners de la aplicación.
  */
 function setupEventListeners() {
@@ -72,12 +180,23 @@ function setupEventListeners() {
         e.preventDefault();
         ui.adminLoginModal?.classList.remove('hidden');
     });
-    ui.adminLoginBtn?.addEventListener('click', () => 
+    ui.adminLoginBtn?.addEventListener('click', () =>
         auth.handleAdminLogin(
-            document.getElementById('admin-user')?.value, 
+            document.getElementById('admin-user')?.value,
             document.getElementById('admin-pass')?.value
         )
     );
+
+    // Permitir enviar con Enter en el modal de login admin
+    const adminUserInput = document.getElementById('admin-user');
+    const adminPassInput = document.getElementById('admin-pass');
+    const handleAdminEnter = (e) => {
+        if (e.key === 'Enter') {
+            auth.handleAdminLogin(adminUserInput?.value, adminPassInput?.value);
+        }
+    };
+    adminUserInput?.addEventListener('keypress', handleAdminEnter);
+    adminPassInput?.addEventListener('keypress', handleAdminEnter);
 
     // --- Lógica del Menú de Usuario ---
     const userMenuBtn = document.getElementById('user-menu-btn');
@@ -91,20 +210,30 @@ function setupEventListeners() {
 
     dropdownLogoutBtn?.addEventListener('click', auth.handleLogout);
 
+    // Botón de editar perfil
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    editProfileBtn?.addEventListener('click', () => {
+        userMenuDropdown?.classList.remove('open');
+        auth.openProfileModal();
+    });
+
     window.addEventListener('click', () => {
         if (userMenuDropdown?.classList.contains('open')) {
             userMenuDropdown.classList.remove('open');
         }
     });
 
+    // --- Menú Móvil Hamburger ---
+    setupMobileMenu();
+
     // --- Flujo de Reserva y Login/Registro de Cliente ---
     ui.clientLoginBtn?.addEventListener('click', async () => {
         const loginSuccess = await auth.handleClientLogin();
-        if (loginSuccess) await client.finalizeBooking();
+        if (loginSuccess) client.showBookingSummary();
     });
     ui.clientRegisterBtn?.addEventListener('click', async () => {
         const registerSuccess = await auth.handleClientRegister();
-        if (registerSuccess) await client.finalizeBooking();
+        if (registerSuccess) client.showBookingSummary();
     });
     ui.showRegisterBtn?.addEventListener('click', () => {
         ui.clientLoginView?.classList.add('hidden');
@@ -173,6 +302,13 @@ function setupEventListeners() {
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.toggle('active', content.dataset.tabContent === tabName);
         });
+
+        // Load data for specific tabs
+        if (tabName === 'admin-barbers') {
+            admin.renderBarbersList();
+        } else if (tabName === 'admin-testimonials') {
+            admin.renderTestimonialsList();
+        }
     });
 
     // --- Listener UNIFICADO para el Modal de Citas del Admin (Agenda Interactiva y Cancelaciones) ---
@@ -211,6 +347,10 @@ function setupEventListeners() {
             }
             const confirmBtn = e.target.closest('.confirm-delete-btn');
             if (confirmBtn) {
+                // Prevenir múltiples clics (race condition)
+                if (confirmBtn.disabled || confirmBtn.dataset.processing === 'true') return;
+                confirmBtn.dataset.processing = 'true';
+
                 if (appointmentId) {
                     admin.handleDeleteAppointment(appointmentId, card, confirmBtn);
                 }
@@ -221,6 +361,11 @@ function setupEventListeners() {
     // --- Listener para el botón de confirmar en el modal de bloqueo rápido ---
     document.getElementById('confirm-manual-booking-btn')?.addEventListener('click', async (e) => {
         const btn = e.target;
+
+        // Prevenir múltiples clics (race condition)
+        if (btn.disabled || btn.dataset.processing === 'true') return;
+        btn.dataset.processing = 'true';
+
         const { time, dateKey } = btn.dataset;
         const serviceId = document.getElementById('manual-booking-service').value;
 
@@ -244,6 +389,7 @@ function setupEventListeners() {
             ui.showToast('Error de conexión al agendar la cita.');
         } finally {
             ui.setButtonLoadingState(btn, false, 'Confirmar y Agendar');
+            btn.dataset.processing = 'false';
         }
     });
 
@@ -296,7 +442,7 @@ function setupEventListeners() {
                 colorControls.classList.add('hidden');
             } else {
                 imageControls.classList.add('hidden');
-                colorControls.remove('hidden');
+                colorControls.classList.remove('hidden');
             }
         });
     });
@@ -314,6 +460,23 @@ function setupEventListeners() {
                     lightboxModal.classList.remove('hidden');
                 }
             }
+        }
+    });
+
+    // --- Listener para refrescar citas del portal ---
+    document.getElementById('refresh-appointments-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('refresh-appointments-btn');
+        const icon = btn?.querySelector('.material-icons');
+        if (icon) icon.style.animation = 'spin 1s linear infinite';
+
+        try {
+            await client.fetchAllAppointments();
+            await client.renderUserPortal();
+            ui.showToast('Citas actualizadas');
+        } catch (error) {
+            ui.showToast('Error al actualizar');
+        } finally {
+            if (icon) icon.style.animation = '';
         }
     });
 
@@ -343,12 +506,16 @@ function setupEventListeners() {
  */
 async function initApp() {
     setupEventListeners();
-    
+    setupWizardListeners();
+    admin.setupBarbersEventListeners();
+    admin.setupTestimonialsEventListeners();
+    auth.initProfileModal();
+
     // --- LÓGICA PARA LA NAVEGACIÓN INTELIGENTE ---
     handleHeaderScroll();
     handleBackToTopButton();
     setupScrollSpy();
-    
+
     window.addEventListener('scroll', () => {
         handleHeaderScroll();
         handleBackToTopButton();
@@ -358,9 +525,16 @@ async function initApp() {
     if (backToTopButton) {
         backToTopButton.addEventListener('click', (e) => {
             e.preventDefault();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            router.navigate('inicio');
         });
     }
+
+    // Actualizar año en el footer
+    const currentYearEl = document.getElementById('current-year');
+    if (currentYearEl) currentYearEl.textContent = new Date().getFullYear();
+
+    // --- INICIALIZAR ROUTER SPA ---
+    initRouter();
 
     // --- FIN DE LA LÓGICA DE NAVEGACIÓN ---
     try {
@@ -368,7 +542,11 @@ async function initApp() {
         client.renderPublicSite();
         ui.updateUIAfterLogin();
 
-        if (state.currentUser?.role === 'admin') {
+        // CAMBIO: El wizard ya NO se muestra automáticamente aquí
+        // Solo se mostrará después de que el ADMIN inicie sesión (ver auth.js)
+        // Si no está configurado, los visitantes ven la página pública con contenido por defecto
+
+        if (state.currentUser?.role === 'ADMIN') {
             ui.showView('admin');
             await admin.renderAdminView();
         } else {
@@ -377,7 +555,10 @@ async function initApp() {
             await client.renderUserPortal();
             client.renderClientCalendar();
         }
-        
+
+        // Manejar ruta inicial después de cargar contenido
+        handleInitialRoute();
+
         client.setupSmoothScroll();
     } catch (error) {
         console.error("Error fatal al inicializar la aplicación:", error);
@@ -392,5 +573,385 @@ async function initApp() {
     }
 }
 
+/**
+ * Inicializa el router con las rutas de la aplicación
+ */
+function initRouter() {
+    // Registrar todas las secciones navegables
+    router.registerRoutes({
+        '#inicio': { section: 'inicio', title: 'Inicio' },
+        '#sobre': { section: 'sobre', title: 'Nosotros' },
+        '#servicios': { section: 'servicios', title: 'Servicios' },
+        '#galeria': { section: 'galeria', title: 'Galería' },
+        '#testimonios': { section: 'testimonios', title: 'Reseñas' },
+        '#ubicacion': { section: 'ubicacion', title: 'Ubicación' },
+        '#agendar': { section: 'agendar', title: 'Agendar Cita' },
+        '#user-portal-view': { section: 'user-portal-view', title: 'Mi Portal' }
+    });
+
+    // Escuchar cambios de ruta para actualizar título
+    window.addEventListener('routeChanged', (e) => {
+        const route = e.detail.route;
+        const routeConfig = router.routes.get(route);
+        if (routeConfig && state.siteContent?.business?.name) {
+            document.title = `${routeConfig.title} | ${state.siteContent.business.name}`;
+        }
+    });
+}
+
+/**
+ * Maneja la ruta inicial al cargar la página
+ */
+function handleInitialRoute() {
+    const hash = window.location.hash;
+
+    // Si hay un hash en la URL, navegar a esa sección
+    if (hash && hash !== '#') {
+        // Pequeño delay para asegurar que el contenido esté renderizado
+        setTimeout(() => {
+            router.navigate(hash);
+        }, 100);
+    }
+}
+
+/**
+ * Muestra el wizard de configuración inicial
+ */
+function showSetupWizard() {
+    const wizardModal = document.getElementById('setup-wizard-modal');
+    if (wizardModal) {
+        wizardModal.classList.remove('hidden');
+    }
+}
+
+/**
+ * Configura los event listeners del wizard de configuración
+ */
+function setupWizardListeners() {
+    const wizardModal = document.getElementById('setup-wizard-modal');
+    const step1 = document.getElementById('wizard-step-1');
+    const step2 = document.getElementById('wizard-step-2');
+    const stepSuccess = document.getElementById('wizard-step-success');
+
+    const nextBtn = document.getElementById('wizard-next-btn');
+    const backBtn = document.getElementById('wizard-back-btn');
+    const finishBtn = document.getElementById('wizard-finish-btn');
+    const closeBtn = document.getElementById('wizard-close-btn');
+
+    // Paso 1 -> Paso 2
+    nextBtn?.addEventListener('click', () => {
+        const businessName = document.getElementById('wizard-business-name')?.value?.trim();
+
+        if (!businessName || businessName.length < 2) {
+            ui.showToast('Por favor, ingresa el nombre de tu negocio (mínimo 2 caracteres).');
+            return;
+        }
+
+        step1?.classList.add('hidden');
+        step2?.classList.remove('hidden');
+    });
+
+    // Paso 2 -> Paso 1
+    backBtn?.addEventListener('click', () => {
+        step2?.classList.add('hidden');
+        step1?.classList.remove('hidden');
+    });
+
+    // Finalizar configuración
+    finishBtn?.addEventListener('click', async () => {
+        const businessName = document.getElementById('wizard-business-name')?.value?.trim();
+        const phone = document.getElementById('wizard-phone')?.value?.trim();
+        const whatsapp = document.getElementById('wizard-whatsapp')?.value?.trim();
+        const instagram = document.getElementById('wizard-instagram')?.value?.trim();
+        const facebook = document.getElementById('wizard-facebook')?.value?.trim();
+        const tiktok = document.getElementById('wizard-tiktok')?.value?.trim();
+
+        ui.setButtonLoadingState(finishBtn, true, 'Guardando...');
+
+        try {
+            // CAMBIO: Usar authFetch para enviar el token de autenticación del admin
+            const response = await authFetch(`${API_BASE_URL}/content/setup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    businessName,
+                    businessPhone: phone,
+                    businessWhatsApp: whatsapp,
+                    socialInstagram: instagram,
+                    socialFacebook: facebook,
+                    socialTiktok: tiktok
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Mostrar paso de éxito
+                step2?.classList.add('hidden');
+                stepSuccess?.classList.remove('hidden');
+
+                // Actualizar el estado y re-renderizar
+                state.siteContent.isConfigured = true;
+                state.siteContent.business = {
+                    name: businessName,
+                    phone: phone || '',
+                    whatsapp: whatsapp || '',
+                    logo: ''
+                };
+                state.siteContent.social = {
+                    instagram: instagram || '',
+                    facebook: facebook || '',
+                    tiktok: tiktok || ''
+                };
+
+                client.renderPublicSite();
+            } else {
+                ui.showToast(result.message || 'Error al guardar la configuración.');
+            }
+        } catch (error) {
+            console.error('Error en configuración inicial:', error);
+            ui.showToast('Error de conexión. Por favor, intenta de nuevo.');
+        } finally {
+            ui.setButtonLoadingState(finishBtn, false, 'Finalizar Configuración');
+        }
+    });
+
+    // Cerrar wizard después de éxito
+    closeBtn?.addEventListener('click', () => {
+        wizardModal?.classList.add('hidden');
+    });
+}
+
+// =======================================================
+// === TOGGLE DARK/LIGHT MODE ===
+// =======================================================
+
+function setupThemeToggle() {
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeIcon = document.getElementById('theme-icon');
+
+    if (!themeToggleBtn || !themeIcon) return;
+
+    // Cargar tema guardado o usar preferencia del sistema
+    const savedTheme = localStorage.getItem('barber_theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'dark'); // Default dark
+
+    applyTheme(initialTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+        localStorage.setItem('barber_theme', newTheme);
+    });
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        themeIcon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
+        themeToggleBtn.setAttribute('aria-label', theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+    }
+}
+
+// =======================================================
+// === BÚSQUEDA DE CITAS EN ADMIN ===
+// =======================================================
+
+function setupAppointmentSearch() {
+    const searchInput = document.getElementById('search-appointments');
+    const searchClearBtn = document.getElementById('search-clear-btn');
+    const inboxList = document.getElementById('inbox-list');
+
+    if (!searchInput || !inboxList) return;
+
+    let debounceTimer;
+
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            filterAppointments(e.target.value.toLowerCase().trim());
+        }, 300);
+    });
+
+    searchClearBtn?.addEventListener('click', () => {
+        searchInput.value = '';
+        filterAppointments('');
+        searchInput.focus();
+    });
+
+    // Permitir buscar con Enter
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            searchInput.value = '';
+            filterAppointments('');
+        }
+    });
+
+    function filterAppointments(query) {
+        const cards = inboxList.querySelectorAll('.admin-appointment-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const clientName = card.querySelector('.appointment-details strong')?.textContent?.toLowerCase() || '';
+            const serviceName = card.querySelector('.appointment-details span')?.textContent?.toLowerCase() || '';
+            const dateTime = card.querySelector('.text-sm')?.textContent?.toLowerCase() || '';
+
+            const matches = clientName.includes(query) ||
+                           serviceName.includes(query) ||
+                           dateTime.includes(query);
+
+            if (matches || query === '') {
+                card.style.display = '';
+                visibleCount++;
+
+                // Highlight del texto buscado
+                if (query) {
+                    highlightText(card, query);
+                } else {
+                    removeHighlight(card);
+                }
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Mostrar mensaje si no hay resultados
+        const noResultsEl = inboxList.querySelector('.no-results');
+        if (visibleCount === 0 && query !== '') {
+            if (!noResultsEl) {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.innerHTML = `
+                    <span class="material-icons">search_off</span>
+                    <p>No se encontraron citas para "${escapeHtml(query)}"</p>
+                `;
+                inboxList.appendChild(noResults);
+            }
+        } else if (noResultsEl) {
+            noResultsEl.remove();
+        }
+    }
+
+    function highlightText(card, query) {
+        // Restaurar texto original primero
+        removeHighlight(card);
+
+        const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT, null, false);
+        const textNodes = [];
+        while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+        textNodes.forEach(node => {
+            const text = node.textContent;
+            const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+            if (regex.test(text)) {
+                const span = document.createElement('span');
+                span.innerHTML = text.replace(regex, '<mark class="search-highlight">$1</mark>');
+                node.parentNode.replaceChild(span, node);
+            }
+        });
+    }
+
+    function removeHighlight(card) {
+        const highlights = card.querySelectorAll('.search-highlight');
+        highlights.forEach(mark => {
+            const parent = mark.parentNode;
+            parent.replaceChild(document.createTextNode(mark.textContent), mark);
+            parent.normalize();
+        });
+        // Limpiar spans vacíos
+        card.querySelectorAll('span:empty').forEach(s => s.remove());
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+}
+
+// =======================================================
+// === NAVEGACIÓN POR TECLADO MEJORADA ===
+// =======================================================
+
+function setupKeyboardNavigation() {
+    // Cerrar modales con Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            ui.closeAllModals();
+        }
+    });
+
+    // Hacer gallery items navegables con teclado
+    document.getElementById('gallery-container')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const item = e.target.closest('.gallery-item');
+            if (item) {
+                e.preventDefault();
+                item.click();
+            }
+        }
+    });
+
+    // Hacer calendar days navegables con teclado
+    document.querySelectorAll('.calendar-grid').forEach(grid => {
+        grid.addEventListener('keydown', (e) => {
+            const day = e.target.closest('.calendar-day:not(.empty)');
+            if (!day) return;
+
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                day.click();
+            }
+
+            // Navegación con flechas
+            const days = Array.from(grid.querySelectorAll('.calendar-day:not(.empty)'));
+            const currentIndex = days.indexOf(day);
+
+            let nextIndex;
+            switch (e.key) {
+                case 'ArrowRight':
+                    nextIndex = currentIndex + 1;
+                    break;
+                case 'ArrowLeft':
+                    nextIndex = currentIndex - 1;
+                    break;
+                case 'ArrowDown':
+                    nextIndex = currentIndex + 7;
+                    break;
+                case 'ArrowUp':
+                    nextIndex = currentIndex - 7;
+                    break;
+                default:
+                    return;
+            }
+
+            if (nextIndex >= 0 && nextIndex < days.length) {
+                e.preventDefault();
+                days[nextIndex].focus();
+            }
+        });
+    });
+
+    // Time slots navegables con teclado
+    document.getElementById('time-slots-container')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const slot = e.target.closest('.time-slot.available');
+            if (slot) {
+                e.preventDefault();
+                slot.click();
+            }
+        }
+    });
+}
+
 // Punto de entrada de la aplicación
-document.addEventListener('DOMContentLoaded', initApp);
+document.addEventListener('DOMContentLoaded', () => {
+    initApp();
+    setupThemeToggle();
+    setupAppointmentSearch();
+    setupKeyboardNavigation();
+});

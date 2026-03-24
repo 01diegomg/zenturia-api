@@ -1,0 +1,134 @@
+<!-- Tab: Dashboard de Ventas -->
+<div data-tab-content="admin-sales" class="tab-content">
+    <section class="py-8">
+        <!-- Header del Dashboard -->
+        <div class="sales-dashboard-header">
+            <div class="flex items-center gap-4">
+                <div class="sales-icon-container">
+                    <span class="material-icons text-3xl">trending_up</span>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Centro de Control de Ingresos</h3>
+                    <p class="text-gray-400">Análisis en tiempo real de tu negocio</p>
+                </div>
+            </div>
+            <div class="sales-date-selector">
+                <button id="sales-period-today" class="sales-period-btn active">Hoy</button>
+                <button id="sales-period-week" class="sales-period-btn">Esta Semana</button>
+                <button id="sales-period-month" class="sales-period-btn">Este Mes</button>
+            </div>
+        </div>
+
+        <!-- Tarjetas de métricas principales -->
+        <div class="sales-metrics-grid">
+            <!-- Ganancias del período -->
+            <div class="sales-metric-card sales-card-primary">
+                <div class="metric-glow"></div>
+                <div class="metric-icon-wrapper">
+                    <span class="material-icons">payments</span>
+                </div>
+                <div class="metric-content">
+                    <span class="metric-label">Ganancias</span>
+                    <span id="sales-total-earnings" class="metric-value">$0.00</span>
+                    <span id="sales-earnings-change" class="metric-change positive">
+                        <span class="material-icons text-sm">arrow_upward</span>
+                        +0% vs ayer
+                    </span>
+                </div>
+            </div>
+
+            <!-- Citas completadas -->
+            <div class="sales-metric-card sales-card-secondary">
+                <div class="metric-glow"></div>
+                <div class="metric-icon-wrapper icon-appointments">
+                    <span class="material-icons">event_available</span>
+                </div>
+                <div class="metric-content">
+                    <span class="metric-label">Citas Completadas</span>
+                    <span id="sales-completed-appointments" class="metric-value">0</span>
+                    <span class="metric-subtitle">de <span id="sales-total-appointments">0</span> agendadas</span>
+                </div>
+            </div>
+
+            <!-- Servicio más popular -->
+            <div class="sales-metric-card sales-card-tertiary">
+                <div class="metric-glow"></div>
+                <div class="metric-icon-wrapper icon-popular">
+                    <span class="material-icons">star</span>
+                </div>
+                <div class="metric-content">
+                    <span class="metric-label">Servicio Estrella</span>
+                    <span id="sales-top-service" class="metric-value-small">-</span>
+                    <span id="sales-top-service-count" class="metric-subtitle">0 reservas</span>
+                </div>
+            </div>
+
+            <!-- Clientes nuevos -->
+            <div class="sales-metric-card sales-card-quaternary">
+                <div class="metric-glow"></div>
+                <div class="metric-icon-wrapper icon-clients">
+                    <span class="material-icons">person_add</span>
+                </div>
+                <div class="metric-content">
+                    <span class="metric-label">Clientes Atendidos</span>
+                    <span id="sales-total-clients" class="metric-value">0</span>
+                    <span class="metric-subtitle">clientes únicos</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico y detalles -->
+        <div class="sales-details-grid">
+            <!-- Lista de servicios vendidos -->
+            <div class="sales-breakdown-card">
+                <div class="breakdown-header">
+                    <h4 class="flex items-center gap-2">
+                        <span class="material-icons text-accent">pie_chart</span>
+                        Desglose por Servicio
+                    </h4>
+                </div>
+                <div id="sales-services-breakdown" class="breakdown-list">
+                    <p class="text-gray-500 text-center py-4">Cargando datos...</p>
+                </div>
+            </div>
+
+            <!-- Últimas transacciones -->
+            <div class="sales-transactions-card">
+                <div class="transactions-header">
+                    <h4 class="flex items-center gap-2">
+                        <span class="material-icons text-accent">receipt_long</span>
+                        Últimas Citas Completadas
+                    </h4>
+                </div>
+                <div id="sales-recent-transactions" class="transactions-list">
+                    <p class="text-gray-500 text-center py-4">Cargando datos...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen rápido -->
+        <div class="sales-quick-stats">
+            <div class="quick-stat">
+                <span class="material-icons">schedule</span>
+                <div>
+                    <span class="quick-stat-value" id="sales-avg-ticket">$0</span>
+                    <span class="quick-stat-label">Ticket Promedio</span>
+                </div>
+            </div>
+            <div class="quick-stat">
+                <span class="material-icons">cancel</span>
+                <div>
+                    <span class="quick-stat-value" id="sales-cancelled-count">0</span>
+                    <span class="quick-stat-label">Citas Canceladas</span>
+                </div>
+            </div>
+            <div class="quick-stat">
+                <span class="material-icons">pending_actions</span>
+                <div>
+                    <span class="quick-stat-value" id="sales-pending-count">0</span>
+                    <span class="quick-stat-label">Citas Pendientes Hoy</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

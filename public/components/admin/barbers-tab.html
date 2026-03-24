@@ -1,0 +1,76 @@
+<!-- Tab: Gestión de Barberos -->
+<div class="tab-content" data-tab-content="barbers">
+    <div class="admin-section">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="admin-section-title">Equipo de Barberos</h3>
+            <button id="add-barber-btn" class="btn-primary flex items-center gap-2">
+                <span class="material-icons">person_add</span>
+                Agregar Barbero
+            </button>
+        </div>
+
+        <div id="barbers-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Los barberos se cargarán dinámicamente -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editor de Barbero -->
+<div id="barber-editor-modal" class="modal-overlay hidden">
+    <div class="modal-content max-w-lg">
+        <button class="close-modal-btn">&times;</button>
+        <h3 id="barber-editor-title" class="font-display text-2xl mb-6">Nuevo Barbero</h3>
+
+        <form id="barber-editor-form">
+            <input type="hidden" id="barber-editor-id">
+
+            <div class="form-group">
+                <label for="barber-editor-name">Nombre del Barbero *</label>
+                <input type="text" id="barber-editor-name" class="portal-input" required placeholder="Ej: Carlos Rodríguez">
+            </div>
+
+            <div class="form-group">
+                <label for="barber-editor-photo">URL de Foto</label>
+                <input type="url" id="barber-editor-photo" class="portal-input" placeholder="https://ejemplo.com/foto.jpg">
+                <p class="text-xs text-gray-500 mt-1">Deja vacío para usar avatar por defecto</p>
+            </div>
+
+            <div class="form-group">
+                <label>Servicios que ofrece</label>
+                <div id="barber-specialties-checkboxes" class="grid grid-cols-1 gap-2 mt-2">
+                    <!-- Los checkboxes de servicios se generarán dinámicamente -->
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="barber-editor-active" checked class="form-checkbox">
+                    <span>Barbero activo</span>
+                </label>
+                <p class="text-xs text-gray-500 mt-1">Los barberos inactivos no aparecerán en el sistema de reservas</p>
+            </div>
+
+            <div class="flex gap-4 mt-6">
+                <button type="button" id="barber-editor-cancel" class="flex-1 btn-secondary">Cancelar</button>
+                <button type="submit" id="barber-editor-submit" class="flex-1 btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Horario del Barbero -->
+<div id="barber-schedule-modal" class="modal-overlay hidden">
+    <div class="modal-content max-w-2xl">
+        <button class="close-modal-btn">&times;</button>
+        <h3 id="barber-schedule-title" class="font-display text-2xl mb-6">Horario de Trabajo</h3>
+
+        <div id="barber-schedule-editor" class="space-y-4">
+            <!-- El editor de horarios se generará dinámicamente -->
+        </div>
+
+        <div class="flex gap-4 mt-6">
+            <button type="button" id="barber-schedule-cancel" class="flex-1 btn-secondary">Cancelar</button>
+            <button type="button" id="barber-schedule-save" class="flex-1 btn-primary">Guardar Horario</button>
+        </div>
+    </div>
+</div>

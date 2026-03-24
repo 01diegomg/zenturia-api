@@ -1,0 +1,136 @@
+<!-- Tab: Gestor de Horarios -->
+<div data-tab-content="admin-schedule" class="tab-content">
+    <section class="py-8">
+        <!-- Header de sección estilo Dashboard -->
+        <div class="admin-section-header">
+            <div class="flex items-center gap-4">
+                <div class="section-icon">
+                    <span class="material-icons">schedule</span>
+                </div>
+                <div class="section-info">
+                    <h3>Gestor de Horarios</h3>
+                    <p>Configura tu disponibilidad semanal y días especiales</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de ayuda/guía mejorada -->
+        <div class="admin-card mb-8">
+            <div class="admin-card-body flex items-start gap-4">
+                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <span class="material-icons text-blue-400">lightbulb</span>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-white mb-1">¿Cómo funciona?</h4>
+                    <p class="text-sm text-gray-400">Define tu horario semanal habitual en el panel izquierdo. Usa el calendario de la derecha para marcar excepciones como vacaciones, festivos o días con horarios especiales.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Panel Izquierdo: Horario Semanal -->
+            <div class="portal-section schedule-section">
+                <div class="schedule-header">
+                    <div>
+                        <h3 class="portal-section-title flex items-center gap-2">
+                            <span class="material-icons text-accent">schedule</span>
+                            Horario Semanal
+                        </h3>
+                        <p class="text-gray-400 text-sm mt-2">Tu horario habitual de lunes a domingo</p>
+                    </div>
+                    <button id="quick-schedule-btn" class="quick-action-btn">
+                        <span class="material-icons">flash_on</span>
+                        Atajos Rápidos
+                    </button>
+                </div>
+
+                <!-- Atajos Rápidos (desplegable) -->
+                <div id="quick-schedule-menu" class="quick-schedule-menu hidden">
+                    <button class="quick-preset-btn" data-preset="weekdays">
+                        <span class="material-icons">business_center</span>
+                        <div>
+                            <strong>Lunes a Viernes</strong>
+                            <span>9:00 AM - 6:00 PM</span>
+                        </div>
+                    </button>
+                    <button class="quick-preset-btn" data-preset="everyday">
+                        <span class="material-icons">calendar_today</span>
+                        <div>
+                            <strong>Todos los días</strong>
+                            <span>10:00 AM - 8:00 PM</span>
+                        </div>
+                    </button>
+                    <button class="quick-preset-btn" data-preset="weekends-off">
+                        <span class="material-icons">weekend</span>
+                        <div>
+                            <strong>Cerrar Fines de Semana</strong>
+                            <span>Solo Lun-Vie</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Container de días de la semana -->
+                <div id="schedule-editor-container" class="schedule-days-grid"></div>
+
+                <button id="save-schedule-btn" class="modal-button mt-8 save-schedule-btn">
+                    <span class="material-icons">save</span>
+                    Guardar Horario Semanal
+                </button>
+            </div>
+
+            <!-- Panel Derecho: Excepciones -->
+            <div class="portal-section schedule-section">
+                <div class="schedule-header">
+                    <div>
+                        <h3 class="portal-section-title flex items-center gap-2">
+                            <span class="material-icons text-accent">event_busy</span>
+                            Excepciones y Días Especiales
+                        </h3>
+                        <p class="text-gray-400 text-sm mt-2">Marca días cerrados o con horarios especiales</p>
+                    </div>
+                </div>
+
+                <div class="calendar enhanced-calendar">
+                    <div class="month-header">
+                        <button id="override-prev-month-btn" class="calendar-nav-btn">
+                            <span class="material-icons">chevron_left</span>
+                        </button>
+                        <h2 id="override-month-year" class="calendar-month-title"></h2>
+                        <button id="override-next-month-btn" class="calendar-nav-btn">
+                            <span class="material-icons">chevron_right</span>
+                        </button>
+                    </div>
+                    <div class="weekdays">
+                        <div>Dom</div> <div>Lun</div> <div>Mar</div> <div>Mié</div> <div>Jue</div> <div>Vie</div> <div>Sáb</div>
+                    </div>
+                    <div id="override-calendar-grid" class="calendar-grid enhanced-grid"></div>
+                </div>
+
+                <!-- Leyenda mejorada -->
+                <div class="calendar-legend">
+                    <h4 class="legend-title">Leyenda:</h4>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <span class="legend-badge badge-closed">
+                                <span class="material-icons">close</span>
+                            </span>
+                            <span>Día cerrado</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-badge badge-special">
+                                <span class="material-icons">schedule</span>
+                            </span>
+                            <span>Horario especial</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-badge badge-normal">
+                                <span class="material-icons">check</span>
+                            </span>
+                            <span>Horario normal</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

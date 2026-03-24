@@ -1,0 +1,29 @@
+<!-- Modal: Service/Content Editor -->
+<div id="content-editor-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editor-modal-title">
+    <div class="modal-content max-w-lg">
+        <button class="close-modal-btn">&times;</button>
+        <h3 id="editor-modal-title" class="font-display text-2xl mb-6"></h3>
+        <div id="editor-modal-body" class="space-y-4">
+            <input type="hidden" id="edit-service-id">
+            <div class="form-group">
+                <label for="edit-service-name">Nombre del Ritual</label>
+                <input type="text" id="edit-service-name" class="portal-input">
+            </div>
+            <div class="form-group">
+                <label for="edit-service-description">Descripción</label>
+                <textarea id="edit-service-description" rows="4" class="portal-input"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label for="edit-service-price">Precio ($)</label>
+                    <input type="number" id="edit-service-price" class="portal-input">
+                </div>
+                <div class="form-group">
+                    <label for="edit-service-duration">Duración (min)</label>
+                    <input type="number" id="edit-service-duration" class="portal-input">
+                </div>
+            </div>
+            <button id="save-service-btn" class="modal-button mt-4">Guardar Cambios</button>
+        </div>
+    </div>
+</div>

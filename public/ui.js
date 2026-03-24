@@ -150,31 +150,39 @@ export function updateUIAfterLogin() {
     const userMenuContainer = document.getElementById('user-menu-container');
     const userMenuName = document.getElementById('user-menu-name');
     const welcomeMessage = document.getElementById('welcome-message');
+    const mobileUserSection = document.getElementById('mobile-user-section');
 
     if (state.currentUser && state.currentUser.role === 'client') {
         // --- Usuario cliente ha iniciado sesión ---
-        if (agendarBtn) agendarBtn.style.display = 'none'; // <-- CAMBIO: Ocultamos directamente el botón
-        if (userMenuContainer) userMenuContainer.style.display = 'block'; // <-- CAMBIO: Mostramos directamente el menú
-        
+        if (agendarBtn) agendarBtn.style.display = 'none';
+        if (userMenuContainer) userMenuContainer.style.display = 'block';
+
         if (userMenuName) userMenuName.textContent = `Hola, ${state.currentUser.name.split(' ')[0]}`;
         if (welcomeMessage) welcomeMessage.innerHTML = `Bienvenido, <span class="text-yellow-500">${state.currentUser.name}</span>`;
-        
+
         document.getElementById('user-portal-view')?.classList.remove('hidden');
+
+        // Mostrar sección de usuario en menú móvil
+        if (mobileUserSection) mobileUserSection.classList.remove('hidden');
 
     } else if (state.currentUser && state.currentUser.role === 'admin') {
         // --- Admin ha iniciado sesión ---
         if (agendarBtn) agendarBtn.style.display = 'none';
         if (userMenuContainer) userMenuContainer.style.display = 'none';
+        if (mobileUserSection) mobileUserSection.classList.add('hidden');
 
     } else {
         // --- Nadie ha iniciado sesión ---
-        if (agendarBtn) agendarBtn.style.display = 'inline-flex'; // <-- CAMBIO: Restauramos su display original
-        if (userMenuContainer) userMenuContainer.style.display = 'none'; // <-- CAMBIO: Ocultamos el menú
-        
+        if (agendarBtn) agendarBtn.style.display = 'inline-flex';
+        if (userMenuContainer) userMenuContainer.style.display = 'none';
+
         document.getElementById('user-portal-view')?.classList.add('hidden');
         if (state.siteContent?.hero && welcomeMessage) {
             welcomeMessage.textContent = state.siteContent.hero.title;
         }
+
+        // Ocultar sección de usuario en menú móvil
+        if (mobileUserSection) mobileUserSection.classList.add('hidden');
     }
 }
 
@@ -185,17 +193,32 @@ export function updateUIAfterLogin() {
 export function showView(viewName) {
     const agendarBtn = document.getElementById('agendar-btn');
     const mainNavLinks = document.querySelectorAll('.main-nav-link');
+    const topBar = document.getElementById('top-bar');
+    const header = document.querySelector('header');
 
     if (viewName === 'client') {
         clientMainView.classList.remove('hidden');
         adminMainView.classList.add('hidden');
         agendarBtn?.classList.remove('hidden');
         mainNavLinks.forEach(link => link.classList.remove('hidden'));
+        // Mostrar cintillo en vista cliente
+        if (topBar) {
+            topBar.classList.remove('admin-hidden');
+            if (window.scrollY <= 50) {
+                topBar.classList.remove('top-bar-hidden');
+                if (header) header.style.top = '37px';
+            }
+        }
     } else if (viewName === 'admin') {
         clientMainView.classList.add('hidden');
         adminMainView.classList.remove('hidden');
         agendarBtn?.classList.add('hidden');
         mainNavLinks.forEach(link => link.classList.add('hidden'));
+        // Ocultar cintillo en vista admin
+        if (topBar) {
+            topBar.classList.add('top-bar-hidden', 'admin-hidden');
+            if (header) header.style.top = '0';
+        }
     }
 }
 
@@ -283,4 +306,236 @@ export function setButtonLoadingState(button, isLoading, loadingText = '') {
         button.disabled = false;
         button.innerHTML = button.dataset.originalText;
     }
+}
+
+/**
+ * Muestra un modal de resumen de reservación antes de confirmar
+ * @param {Object} bookingData - Datos de la reservación
+ * @param {Function} onConfirm - Callback cuando el usuario confirma
+ * @param {Function} onCancel - Callback cuando el usuario cancela
+ */
+export function showBookingSummaryModal(bookingData, onConfirm, onCancel) {
+    const { serviceName, servicePrice, date, time, barberName, barberPhoto } = bookingData;
+
+    // Crear el modal dinámicamente
+    const existingModal = document.getElementById('booking-summary-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'booking-summary-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content max-w-md">
+            <button class="close-modal-btn" id="summary-close-btn">&times;</button>
+            <h3 class="font-display text-2xl mb-6 text-center">Confirma tu Cita</h3>
+
+            <div class="booking-summary">
+                ${barberName ? `
+                <div class="booking-summary-item">
+                    <span class="booking-summary-label">Barbero</span>
+                    <div class="booking-summary-barber">
+                        ${barberPhoto ?
+                            `<img src="${barberPhoto}" alt="${barberName}">` :
+                            '<span class="material-icons text-2xl text-gray-400">person</span>'
+                        }
+                        <span class="booking-summary-value">${barberName}</span>
+                    </div>
+                </div>
+                ` : ''}
+                <div class="booking-summary-item">
+                    <span class="booking-summary-label">Servicio</span>
+                    <span class="booking-summary-value">${serviceName}</span>
+                </div>
+                <div class="booking-summary-item">
+                    <span class="booking-summary-label">Fecha</span>
+                    <span class="booking-summary-value">${date}</span>
+                </div>
+                <div class="booking-summary-item">
+                    <span class="booking-summary-label">Hora</span>
+                    <span class="booking-summary-value">${time}</span>
+                </div>
+                <div class="booking-summary-item">
+                    <span class="booking-summary-label">Precio</span>
+                    <span class="booking-summary-value text-accent">$${servicePrice}</span>
+                </div>
+            </div>
+
+            <div class="flex gap-4 mt-6">
+                <button id="summary-cancel-btn" class="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">
+                    Volver
+                </button>
+                <button id="summary-confirm-btn" class="flex-1 px-4 py-3 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg transition-colors">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closeModal = () => {
+        modal.classList.add('hidden');
+        setTimeout(() => modal.remove(), 300);
+    };
+
+    // Event listeners
+    document.getElementById('summary-close-btn').addEventListener('click', () => {
+        closeModal();
+        if (onCancel) onCancel();
+    });
+
+    document.getElementById('summary-cancel-btn').addEventListener('click', () => {
+        closeModal();
+        if (onCancel) onCancel();
+    });
+
+    document.getElementById('summary-confirm-btn').addEventListener('click', () => {
+        if (onConfirm) onConfirm(closeModal);
+    });
+
+    // Cerrar al hacer clic en el overlay
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+            if (onCancel) onCancel();
+        }
+    });
+}
+
+/**
+ * Muestra un skeleton loader en el calendario mientras carga
+ * @param {HTMLElement} calendarGrid - El contenedor del calendario
+ */
+export function showCalendarSkeleton(calendarGrid) {
+    if (!calendarGrid) return;
+
+    calendarGrid.innerHTML = '';
+
+    // Crear 35 celdas skeleton (5 semanas x 7 días)
+    for (let i = 0; i < 35; i++) {
+        const skeleton = document.createElement('div');
+        skeleton.className = 'calendar-day skeleton-loading';
+        skeleton.innerHTML = '<div class="skeleton-pulse"></div>';
+        calendarGrid.appendChild(skeleton);
+    }
+}
+
+/**
+ * Muestra un modal de éxito después de una reservación exitosa
+ * @param {Object} bookingData - Datos de la reservación
+ */
+export function showBookingSuccessModal(bookingData) {
+    const { serviceName, servicePrice, date, time, barberName } = bookingData;
+
+    // Remover modal existente si hay
+    const existingModal = document.getElementById('booking-success-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'booking-success-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content max-w-md text-center">
+            <div class="success-animation mb-6">
+                <div class="success-checkmark">
+                    <span class="material-icons text-6xl text-green-500">check_circle</span>
+                </div>
+            </div>
+
+            <h3 class="font-display text-2xl mb-4 text-white">¡Cita Confirmada!</h3>
+            <p class="text-gray-400 mb-6">Tu reservación ha sido registrada exitosamente</p>
+
+            <div class="booking-success-details bg-gray-800/50 rounded-lg p-4 mb-6 text-left">
+                <div class="flex justify-between mb-2">
+                    <span class="text-gray-400">Servicio:</span>
+                    <span class="text-white font-semibold">${serviceName}</span>
+                </div>
+                ${barberName ? `
+                <div class="flex justify-between mb-2">
+                    <span class="text-gray-400">Barbero:</span>
+                    <span class="text-white">${barberName}</span>
+                </div>
+                ` : ''}
+                <div class="flex justify-between mb-2">
+                    <span class="text-gray-400">Fecha:</span>
+                    <span class="text-white">${date}</span>
+                </div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-gray-400">Hora:</span>
+                    <span class="text-accent font-bold">${time}</span>
+                </div>
+                <div class="flex justify-between pt-2 border-t border-gray-700">
+                    <span class="text-gray-400">Total:</span>
+                    <span class="text-accent font-bold text-lg">$${servicePrice}</span>
+                </div>
+            </div>
+
+            <p class="text-sm text-gray-500 mb-6">
+                <span class="material-icons text-sm align-middle mr-1">mail</span>
+                Recibirás un correo con los detalles de tu cita
+            </p>
+
+            <button id="success-close-btn" class="modal-button">
+                <span class="flex items-center justify-center gap-2">
+                    <span class="material-icons">check</span>
+                    Entendido
+                </span>
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Animación de entrada
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
+
+    // Event listener para cerrar
+    const closeModal = () => {
+        modal.classList.add('hidden');
+        setTimeout(() => modal.remove(), 300);
+    };
+
+    document.getElementById('success-close-btn').addEventListener('click', closeModal);
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+}
+
+/**
+ * Muestra un modal de error genérico
+ * @param {string} title - Título del error
+ * @param {string} message - Mensaje de error
+ */
+export function showErrorModal(title, message) {
+    const existingModal = document.getElementById('error-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'error-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content max-w-md text-center">
+            <div class="mb-6">
+                <span class="material-icons text-6xl text-red-500">error_outline</span>
+            </div>
+            <h3 class="font-display text-2xl mb-4 text-white">${title}</h3>
+            <p class="text-gray-400 mb-6">${message}</p>
+            <button id="error-close-btn" class="modal-button bg-red-600 hover:bg-red-700">Cerrar</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closeModal = () => {
+        modal.classList.add('hidden');
+        setTimeout(() => modal.remove(), 300);
+    };
+
+    document.getElementById('error-close-btn').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
 }

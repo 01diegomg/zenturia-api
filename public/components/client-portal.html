@@ -1,0 +1,59 @@
+<!-- Sección Portal de Usuario -->
+<section id="user-portal-view" class="hidden py-20 md:py-32 section-bg">
+    <div class="container mx-auto px-6">
+        <!-- Header del portal mejorado -->
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-24 h-24 rounded-full mb-6 portal-avatar-circle">
+                <span class="material-icons text-5xl text-accent">account_circle</span>
+            </div>
+            <h2 class="section-title text-4xl md:text-5xl font-display font-bold mb-4">Mi Portal</h2>
+            <p id="user-portal-greeting" class="text-subtle text-lg">Gestiona tus citas y revisa tu historial de servicios</p>
+        </div>
+
+        <!-- Acciones rápidas -->
+        <div class="flex flex-wrap justify-center gap-4 mb-12">
+            <a href="#agendar" class="portal-quick-action">
+                <span class="material-icons">add_circle</span>
+                <span>Nueva Cita</span>
+            </a>
+            <button id="refresh-appointments-btn" class="portal-quick-action">
+                <span class="material-icons">refresh</span>
+                <span>Actualizar</span>
+            </button>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Próximas citas -->
+            <div class="portal-section">
+                <div class="portal-section-header">
+                    <h3 class="portal-section-title flex items-center gap-2">
+                        <span class="material-icons text-accent">event</span>
+                        Próximas Citas
+                    </h3>
+                    <span id="upcoming-count" class="portal-badge">0</span>
+                </div>
+                <div id="upcoming-appointments-list" class="space-y-4"></div>
+            </div>
+
+            <!-- Historial -->
+            <div class="portal-section">
+                <div class="portal-section-header">
+                    <h3 class="portal-section-title flex items-center gap-2">
+                        <span class="material-icons text-accent">history</span>
+                        Historial de Servicios
+                    </h3>
+                    <span id="past-count" class="portal-badge">0</span>
+                </div>
+                <div id="past-appointments-list" class="space-y-3 max-h-96 overflow-y-auto pr-2"></div>
+            </div>
+        </div>
+
+        <!-- Mensaje informativo -->
+        <div class="mt-12 text-center">
+            <p class="text-subtle text-sm">
+                <span class="material-icons text-sm align-middle mr-1">info</span>
+                Puedes cancelar tus citas hasta 24 horas antes del horario reservado
+            </p>
+        </div>
+    </div>
+</section>

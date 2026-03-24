@@ -5,19 +5,30 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// En prisma/schema.prisma
 datasource db {
-  provider = "sqlite" // Cambiamos de vuelta a sqlite
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  name         String
-  password     String
-  role         String        @default("CLIENT") 
-  appointments Appointment[]
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  phone         String         @default("")
+  password      String
+  role          String         @default("CLIENT")
+  tokenVersion  Int            @default(0)
+  appointments  Appointment[]
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model Service {
@@ -32,11 +43,18 @@ model Service {
 model Appointment {
   id        String   @id @default(cuid())
   date      DateTime
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  service   Service  @relation(fields: [serviceId], references: [id])
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
   serviceId String
+  barber    Barber   @relation(fields: [barberId], references: [id])
+  barberId  String
   status    String   @default("CONFIRMED")
+
+  @@index([date])
+  @@index([userId])
+  @@index([status])
+  @@index([barberId])
 }
 
 
@@ -68,20 +86,76 @@ model SiteContent {
   aboutText           String
   aboutImage          String   @default("https://images.unsplash.com/photo-1621607512214-6c349036a732?q=80&w=1974&auto=format&fit=crop")
   heroBackgroundType  String   @default("IMAGE")
-  heroBackgroundValue String   @default("https://images.unsplash.com/photo-15993512021aa5a4858783?q=80&w=2070&auto=format&fit=crop")
+  heroBackgroundValue String   @default("https://images.unsplash.com/photo-1599351431202-1e5e263ce727?q=80&w=2070&auto=format&fit=crop")
   locationAddress     String
   locationSchedule    String
   locationMapUrl      String
   updatedAt           DateTime @default(now()) @updatedAt
 
-  // === CAMPOS AÑADIDOS PARA LA PALETA DE COLORES ===
+  // === CAMPOS PARA LA PALETA DE COLORES ===
   colorAccent     String @default("#CFAF7C")
   colorBackground String @default("#0a0a0a")
   colorTextMain   String @default("#FFFFFF")
   colorTextSubtle String @default("#cccccc")
+
+  // === CAMPOS PARA CONFIGURACIÓN DEL NEGOCIO ===
+  businessName    String  @default("Mi Barbería")
+  businessLogo    String  @default("")
+  businessPhone   String  @default("")
+  businessWhatsApp String @default("")
+
+  // === REDES SOCIALES ===
+  socialInstagram String  @default("")
+  socialFacebook  String  @default("")
+  socialTiktok    String  @default("")
+
+  // === ESTADO DE CONFIGURACIÓN INICIAL ===
+  isConfigured    Boolean @default(false)
 }
-// En schema.prisma
-// datasource db {
-  // provider = "postgresql" // Para producción
-  // url      = env("DATABASE_URL")
-// }
+
+// === MODELOS DE BARBEROS ===
+model Barber {
+  id           String                  @id @default(cuid())
+  name         String
+  photo        String                  @default("")
+  specialties  String                  @default("[]")
+  isActive     Boolean                 @default(true)
+  appointments Appointment[]
+  schedules    BarberSchedule[]
+  overrides    BarberScheduleOverride[]
+  createdAt    DateTime                @default(now())
+}
+
+model BarberSchedule {
+  id           String  @id @default(cuid())
+  barberId     String
+  barber       Barber  @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  dayOfWeek    Int
+  workingHours String  @default("[]")
+  isDayOff     Boolean @default(false)
+
+  @@unique([barberId, dayOfWeek])
+}
+
+model BarberScheduleOverride {
+  id           String   @id @default(cuid())
+  barberId     String
+  barber       Barber   @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  date         DateTime
+  workingHours String
+  isDayOff     Boolean
+
+  @@unique([barberId, date])
+}
+
+// === MODELO DE TESTIMONIOS ===
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  rating    Int      @default(5)
+  text      String
+  avatar    String   @default("")
+  verified  Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}

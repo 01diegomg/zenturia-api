@@ -1,0 +1,21 @@
+<!-- Modal: Gallery Editor -->
+<div id="gallery-editor-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="gallery-editor-title">
+    <div class="modal-content max-w-lg">
+        <button class="close-modal-btn">&times;</button>
+        <h3 id="gallery-editor-title" class="font-display text-2xl mb-6">Añadir Nueva Imagen a la Galería</h3>
+        <div class="space-y-4">
+            <div class="form-group">
+                <label for="edit-gallery-file" class="block mb-2 text-sm font-medium text-gray-300">Seleccionar Archivo de Imagen</label>
+                <input type="file" id="edit-gallery-file" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-500 file:text-black hover:file:bg-yellow-600" accept="image/*">
+                <div id="image-preview-container" class="mt-4 hidden">
+                    <img id="image-preview" src="#" alt="Vista previa de la imagen" class="max-h-48 rounded-md mx-auto">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="edit-gallery-alt">Descripción (Texto Alternativo)</label>
+                <input type="text" id="edit-gallery-alt" class="portal-input" placeholder="Ej: Cliente con corte desvanecido">
+            </div>
+            <button id="save-gallery-image-btn" class="modal-button mt-4" disabled>Añadir a la Galería</button>
+        </div>
+    </div>
+</div>
