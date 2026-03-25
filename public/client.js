@@ -271,7 +271,7 @@ export function renderPublicSite() {
         ui.servicesListContainer.appendChild(serviceLink);
     });
 
-    // === RENDERIZAR GALERÍA CON LAZY LOADING MEJORADO ===
+    // === RENDERIZAR GALERÍA ===
     ui.galleryContainer.innerHTML = '';
     if (gallery && gallery.length > 0) {
         gallery.forEach((image, index) => {
@@ -283,13 +283,11 @@ export function renderPublicSite() {
             const safeUrl = sanitizeUrl(image.url) || '';
             const safeAlt = escapeHtml(image.altText);
             item.innerHTML = `
-                <img data-src="${safeUrl}" alt="${safeAlt}" loading="lazy" aria-hidden="true">
+                <img src="${safeUrl}" alt="${safeAlt}" loading="lazy">
                 <div class="gallery-overlay"><p>${safeAlt}</p></div>
             `;
             ui.galleryContainer.appendChild(item);
         });
-        // Iniciar lazy loading con IntersectionObserver
-        setupGalleryLazyLoading();
     } else {
         ui.galleryContainer.innerHTML = '<p class="text-subtle col-span-full text-center">Próximamente, los mejores momentos de nuestro estudio.</p>';
     }

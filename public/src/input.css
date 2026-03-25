@@ -582,6 +582,8 @@ body {
     border-radius: 12px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.4);
     cursor: pointer;
+    min-height: 250px;
+    height: 100%;
 }
 .gallery-item:nth-child(4n - 1) {
     grid-row-end: span 2;
