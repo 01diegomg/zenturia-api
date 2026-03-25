@@ -1,7 +1,6 @@
 // --- src/controllers/gallery.controller.js ---
 import { prisma } from '../config/database.js';
 import cloudinary from '../../cloudinaryConfig.js';
-import fs from 'fs';
 
 /**
  * Get all gallery images
@@ -80,7 +79,7 @@ export async function deleteImage(req, res) {
 }
 
 /**
- * Upload image to Cloudinary
+ * Upload image to Cloudinary (using buffer for Railway compatibility)
  */
 export async function uploadImage(req, res) {
     try {
@@ -91,16 +90,17 @@ export async function uploadImage(req, res) {
             });
         }
 
-        const result = await cloudinary.uploader.upload(req.file.path, {
-            folder: 'barberia'
+        // Upload from buffer using upload_stream
+        const result = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                { folder: 'barberia' },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            uploadStream.end(req.file.buffer);
         });
-
-        // Delete local file
-        try {
-            fs.unlinkSync(req.file.path);
-        } catch (unlinkError) {
-            console.error('Error al eliminar archivo temporal:', unlinkError);
-        }
 
         res.status(200).json({
             success: true,
@@ -108,16 +108,6 @@ export async function uploadImage(req, res) {
         });
     } catch (error) {
         console.error('Error al subir imagen:', error);
-        // Clean up local file on error
-        if (req.file && req.file.path) {
-            try {
-                if (fs.existsSync(req.file.path)) {
-                    fs.unlinkSync(req.file.path);
-                }
-            } catch (unlinkError) {
-                console.error('Error al limpiar archivo temporal:', unlinkError);
-            }
-        }
         res.status(500).json({
             success: false,
             message: 'Error del servidor al subir imagen.'
