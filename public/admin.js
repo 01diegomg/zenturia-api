@@ -1019,13 +1019,22 @@ export async function handleDeleteService(serviceId) {
 }
 
 export function handleFileSelect(event) {
+    console.log('handleFileSelect called!', event);
     const file = event.target.files[0];
+    console.log('Selected file:', file);
     if (file) {
         const preview = document.getElementById('image-preview');
         const previewContainer = document.getElementById('image-preview-container');
-        preview.src = URL.createObjectURL(file);
-        previewContainer.classList.remove('hidden');
-        document.getElementById('save-gallery-image-btn').disabled = false;
+        console.log('Preview elements:', preview, previewContainer);
+        if (preview && previewContainer) {
+            const objectUrl = URL.createObjectURL(file);
+            console.log('Object URL:', objectUrl);
+            preview.src = objectUrl;
+            previewContainer.classList.remove('hidden');
+            document.getElementById('save-gallery-image-btn').disabled = false;
+        } else {
+            console.error('Preview elements not found!');
+        }
     }
 }
 
@@ -1691,7 +1700,16 @@ function setupAdminEventListeners() {
     document.getElementById('save-location-btn')?.addEventListener('click', handleSaveLocation);
     document.getElementById('save-service-btn')?.addEventListener('click', handleSaveService);
     document.getElementById('save-gallery-image-btn')?.addEventListener('click', handleAddImage);
-    document.getElementById('edit-gallery-file')?.addEventListener('change', handleFileSelect);
+
+    const galleryFileInput = document.getElementById('edit-gallery-file');
+    console.log('Gallery file input element:', galleryFileInput);
+    if (galleryFileInput) {
+        galleryFileInput.addEventListener('change', handleFileSelect);
+        console.log('Event listener attached to gallery file input');
+    } else {
+        console.error('Gallery file input NOT FOUND!');
+    }
+
     document.getElementById('admin-gallery-list')?.addEventListener('click', handleDeleteImage);
     
     // --- GESTOR DE HORARIO SEMANAL ---
