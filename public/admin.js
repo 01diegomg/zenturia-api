@@ -558,10 +558,10 @@ function renderAdminGalleryList() {
     ui.adminGalleryList.innerHTML = '';
     state.siteContent.gallery.forEach(image => {
         const div = document.createElement('div');
-        div.className = 'relative admin-gallery-item';
+        div.className = 'relative aspect-square overflow-hidden rounded-md';
         const safeUrl = sanitizeUrl(image.url) || '';
         div.innerHTML = `
-            <img src="${safeUrl}" alt="${escapeHtml(image.altText)}" class="w-full h-full object-cover rounded-md">
+            <img src="${safeUrl}" alt="${escapeHtml(image.altText)}" class="w-full h-full object-cover">
             <button data-id="${escapeHtml(image.id)}" class="delete-gallery-btn absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 leading-none">
                 <span class="material-icons text-sm">close</span>
             </button>
