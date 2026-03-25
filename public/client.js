@@ -283,7 +283,7 @@ export function renderPublicSite() {
             const safeUrl = sanitizeUrl(image.url) || '';
             const safeAlt = escapeHtml(image.altText);
             item.innerHTML = `
-                <img src="${safeUrl}" alt="${safeAlt}" loading="lazy">
+                <img src="${safeUrl}" alt="${safeAlt}">
                 <div class="gallery-overlay"><p>${safeAlt}</p></div>
             `;
             ui.galleryContainer.appendChild(item);
