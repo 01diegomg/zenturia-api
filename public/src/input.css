@@ -5234,7 +5234,8 @@ img:not([data-loaded]) {
 /* Excluir imágenes del modal y galería de la regla de lazy loading */
 #image-preview,
 .gallery-item img,
-#admin-gallery-list img {
+#admin-gallery-list img,
+.lightbox-content img {
   opacity: 1 !important;
 }
 
