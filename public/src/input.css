@@ -5231,6 +5231,11 @@ img:not([data-loaded]) {
   opacity: 0;
 }
 
+/* Excluir vista previa del modal de la regla de lazy loading */
+#image-preview {
+  opacity: 1 !important;
+}
+
 /* ===================================
    7.7 EFFICIENT SCROLLING
    =================================== */
