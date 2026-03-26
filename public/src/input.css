@@ -5231,8 +5231,10 @@ img:not([data-loaded]) {
   opacity: 0;
 }
 
-/* Excluir vista previa del modal de la regla de lazy loading */
-#image-preview {
+/* Excluir imágenes del modal y galería de la regla de lazy loading */
+#image-preview,
+.gallery-item img,
+#admin-gallery-list img {
   opacity: 1 !important;
 }
 
