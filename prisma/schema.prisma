@@ -159,3 +159,12 @@ model Testimonial {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 }
+
+// === MODELO DE CATÁLOGO DE CORTES ===
+model Haircut {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String   // URL de Cloudinary
+  createdAt   DateTime @default(now())
+}
