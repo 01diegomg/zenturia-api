@@ -168,3 +168,19 @@ model Haircut {
   imageUrl    String   // URL de Cloudinary
   createdAt   DateTime @default(now())
 }
+
+// === MODELO DE ANÁLISIS FACIAL (IA) ===
+model FacialAnalysis {
+  id              String   @id @default(cuid())
+  userId          String
+  originalImage   String   // URL de la selfie original en Cloudinary
+  faceShape       String   // Forma del rostro detectada (oval, round, square, etc.)
+  confidence      Float    // Nivel de confianza del análisis
+  recommendations String   // JSON con los 3 cortes recomendados
+  simulation1     String?  // URL de simulación 1 en Cloudinary
+  simulation2     String?  // URL de simulación 2 en Cloudinary
+  simulation3     String?  // URL de simulación 3 en Cloudinary
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+}

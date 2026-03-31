@@ -11,6 +11,7 @@ import scheduleRoutes from './schedule.routes.js';
 import salesRoutes from './sales.routes.js';
 import barbersRoutes from './barbers.routes.js';
 import haircutsRoutes from './haircuts.routes.js';
+import facialAnalysisRoutes from './facial-analysis.routes.js';
 import * as galleryController from '../controllers/gallery.controller.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
@@ -47,5 +48,6 @@ router.use('/schedule', scheduleRoutes);
 router.use('/sales', salesRoutes);
 router.use('/barbers', barbersRoutes);
 router.use('/haircuts', haircutsRoutes);
+router.use('/facial-analysis', facialAnalysisRoutes);
 
 export default router;
