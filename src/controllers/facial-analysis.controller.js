@@ -14,6 +14,82 @@ const FACE_SHAPE_RECOMMENDATIONS = {
     'rectangle': ['Textured Crop', 'Messy Top', 'Fade con Volumen']
 };
 
+// Ajustes de recomendaciones según tipo de cabello
+const HAIR_TYPE_ADJUSTMENTS = {
+    'straight': {
+        // Cabello lacio: cualquier corte funciona bien
+        preferred: ['Fade', 'Pompadour', 'Side Part', 'Undercut', 'Slick Back'],
+        avoid: []
+    },
+    'wavy': {
+        // Cabello ondulado: cortes con textura
+        preferred: ['Textured', 'Messy', 'Medium Length', 'Layered', 'Quiff'],
+        avoid: ['Slick Back']
+    },
+    'curly': {
+        // Cabello rizado: mantener volumen arriba
+        preferred: ['Curly Top', 'Taper Fade', 'High Top', 'Fringe', 'Natural'],
+        avoid: ['Pompadour', 'Slick Back', 'Crew Cut corto']
+    },
+    'coily': {
+        // Cabello afro: cortes que respeten la textura
+        preferred: ['Afro', 'High Top Fade', 'Taper', 'Twist Out', 'Freeform'],
+        avoid: ['Pompadour', 'Side Part tradicional']
+    }
+};
+
+// Ajustes según grosor del cabello
+const HAIR_THICKNESS_ADJUSTMENTS = {
+    'thin': {
+        // Cabello fino: cortes que den volumen
+        preferred: ['Textured', 'Layered', 'Messy', 'Fringe'],
+        avoid: ['Undercut largo', 'Slick Back']
+    },
+    'medium': {
+        // Cabello normal: cualquier corte funciona
+        preferred: [],
+        avoid: []
+    },
+    'thick': {
+        // Cabello grueso: cortes con degradado
+        preferred: ['Fade', 'Taper', 'Undercut', 'Textured Crop'],
+        avoid: []
+    }
+};
+
+/**
+ * Obtener recomendaciones ajustadas por tipo de cabello
+ */
+function getAdjustedRecommendations(faceShape, hairType, hairThickness) {
+    let recommendations = [...(FACE_SHAPE_RECOMMENDATIONS[faceShape] || FACE_SHAPE_RECOMMENDATIONS['oval'])];
+
+    // Si tenemos información del tipo de cabello, ajustar
+    if (hairType && HAIR_TYPE_ADJUSTMENTS[hairType]) {
+        const hairAdjust = HAIR_TYPE_ADJUSTMENTS[hairType];
+        // Filtrar cortes que no van bien con el tipo de cabello
+        recommendations = recommendations.filter(cut => {
+            const cutLower = cut.toLowerCase();
+            return !hairAdjust.avoid.some(avoid => cutLower.includes(avoid.toLowerCase()));
+        });
+        // Agregar cortes preferidos si hay espacio
+        if (recommendations.length < 3) {
+            const preferred = hairAdjust.preferred.slice(0, 3 - recommendations.length);
+            recommendations = [...recommendations, ...preferred];
+        }
+    }
+
+    // Ajustar por grosor
+    if (hairThickness && HAIR_THICKNESS_ADJUSTMENTS[hairThickness]) {
+        const thickAdjust = HAIR_THICKNESS_ADJUSTMENTS[hairThickness];
+        recommendations = recommendations.filter(cut => {
+            const cutLower = cut.toLowerCase();
+            return !thickAdjust.avoid.some(avoid => cutLower.includes(avoid.toLowerCase()));
+        });
+    }
+
+    return recommendations.slice(0, 3);
+}
+
 /**
  * Analizar rostro con Face++ API
  */
@@ -45,13 +121,19 @@ async function analyzeFaceWithFacePlusPlus(imageUrl) {
             const face = data.faces[0];
             const faceShape = face.attributes?.faceshape?.value || 'oval';
             return {
+                success: true,
                 faceShape: faceShape.toLowerCase(),
                 confidence: face.attributes?.faceshape?.confidence || 85,
                 faceRectangle: face.face_rectangle
             };
         }
 
-        return simulateFaceAnalysis();
+        // NO se detectó ningún rostro en la imagen
+        return {
+            success: false,
+            error: 'NO_FACE_DETECTED',
+            message: 'No se detectó ningún rostro en la imagen. Por favor, sube una foto donde se vea claramente tu cara.'
+        };
     } catch (error) {
         console.error('Error calling Face++ API:', error);
         return simulateFaceAnalysis();
@@ -65,6 +147,7 @@ function simulateFaceAnalysis() {
     const shapes = ['oval', 'round', 'square', 'heart', 'oblong'];
     const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
     return {
+        success: true,
         faceShape: randomShape,
         confidence: 75 + Math.random() * 20,
         simulated: true
@@ -72,7 +155,77 @@ function simulateFaceAnalysis() {
 }
 
 /**
- * Generar simulación con FAL.ai
+ * Generar simulación con Replicate API (alternativa gratuita)
+ */
+async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
+    const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+
+    if (!REPLICATE_API_TOKEN) {
+        console.log('Replicate API token not found, trying FAL.ai...');
+        return generateSimulationWithFalAI(originalImageUrl, haircutStyle);
+    }
+
+    try {
+        // Usar modelo de face-swap o imagen generativa
+        const response = await fetch('https://api.replicate.com/v1/predictions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                // Modelo de generación de imágenes con referencia facial
+                version: "a45f82a1382bed3c42f29e5bf6aefc97d19adcf8e10ec08f372bd3e0ed2a338e",
+                input: {
+                    image: originalImageUrl,
+                    prompt: `professional photo of a man with ${haircutStyle} haircut, barbershop, clean cut, well groomed, high quality, realistic`,
+                    negative_prompt: 'blurry, distorted, ugly, deformed, cartoon, anime',
+                    num_inference_steps: 30,
+                    guidance_scale: 7.5
+                }
+            })
+        });
+
+        const prediction = await response.json();
+
+        if (prediction.error) {
+            console.error('Replicate error:', prediction.error);
+            return null;
+        }
+
+        // Esperar a que se complete la predicción
+        let result = prediction;
+        let attempts = 0;
+        const maxAttempts = 60; // Máximo 60 segundos
+
+        while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
+
+            const statusResponse = await fetch(result.urls.get, {
+                headers: {
+                    'Authorization': `Token ${REPLICATE_API_TOKEN}`
+                }
+            });
+            result = await statusResponse.json();
+            attempts++;
+        }
+
+        if (result.status === 'succeeded' && result.output) {
+            // El output puede ser un array o un string
+            const outputUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+            return outputUrl;
+        }
+
+        console.log('Replicate prediction did not succeed:', result.status);
+        return null;
+    } catch (error) {
+        console.error('Error calling Replicate:', error);
+        return null;
+    }
+}
+
+/**
+ * Generar simulación con FAL.ai (backup)
  */
 async function generateSimulationWithFalAI(originalImageUrl, haircutStyle) {
     const FAL_API_KEY = process.env.FAL_API_KEY;
@@ -134,10 +287,24 @@ export async function analyzeFace(req, res) {
 
         // 2. Analizar rostro con Face++
         const faceAnalysis = await analyzeFaceWithFacePlusPlus(originalImageUrl);
+
+        // Verificar si se detectó un rostro
+        if (!faceAnalysis.success) {
+            return res.status(400).json({
+                success: false,
+                error: faceAnalysis.error,
+                message: faceAnalysis.message || 'No se pudo detectar un rostro en la imagen.'
+            });
+        }
+
         const faceShape = faceAnalysis.faceShape;
 
-        // 3. Obtener recomendaciones basadas en la forma del rostro
-        const recommendedStyles = FACE_SHAPE_RECOMMENDATIONS[faceShape] || FACE_SHAPE_RECOMMENDATIONS['oval'];
+        // Obtener tipo de cabello del body (enviado desde la app)
+        const hairType = req.body?.hairType || null;
+        const hairThickness = req.body?.hairThickness || null;
+
+        // 3. Obtener recomendaciones ajustadas por forma de rostro Y tipo de cabello
+        const recommendedStyles = getAdjustedRecommendations(faceShape, hairType, hairThickness);
 
         // 4. Buscar cortes del catálogo que coincidan
         const haircuts = await prisma.haircut.findMany({
@@ -203,12 +370,24 @@ export async function analyzeFace(req, res) {
 }
 
 /**
- * POST /facial-analysis/:id/simulate - Generar simulaciones con FAL.ai
+ * POST /facial-analysis/:id/simulate - Generar simulaciones con Replicate/FAL.ai
  */
 export async function generateSimulations(req, res) {
     try {
         const { id } = req.params;
         const userId = req.user.userId;
+
+        // Verificar si algún servicio de IA está configurado (Replicate o FAL.ai)
+        const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+        const FAL_API_KEY = process.env.FAL_API_KEY;
+
+        if (!REPLICATE_API_TOKEN && !FAL_API_KEY) {
+            return res.status(200).json({
+                success: true,
+                simulations: [],
+                message: 'El servicio de simulaciones no está configurado. Contacta al administrador.'
+            });
+        }
 
         // Verificar que el análisis existe y pertenece al usuario
         const analysis = await prisma.facialAnalysis.findFirst({
@@ -222,13 +401,49 @@ export async function generateSimulations(req, res) {
             });
         }
 
+        // Verificar si ya tiene simulaciones generadas
+        if (analysis.simulation1 || analysis.simulation2 || analysis.simulation3) {
+            const existingSimulations = [];
+            const recommendations = JSON.parse(analysis.recommendations);
+
+            if (analysis.simulation1 && recommendations[0]) {
+                existingSimulations.push({
+                    haircutId: recommendations[0].id,
+                    haircutName: recommendations[0].name,
+                    simulationUrl: analysis.simulation1
+                });
+            }
+            if (analysis.simulation2 && recommendations[1]) {
+                existingSimulations.push({
+                    haircutId: recommendations[1].id,
+                    haircutName: recommendations[1].name,
+                    simulationUrl: analysis.simulation2
+                });
+            }
+            if (analysis.simulation3 && recommendations[2]) {
+                existingSimulations.push({
+                    haircutId: recommendations[2].id,
+                    haircutName: recommendations[2].name,
+                    simulationUrl: analysis.simulation3
+                });
+            }
+
+            if (existingSimulations.length > 0) {
+                return res.status(200).json({
+                    success: true,
+                    simulations: existingSimulations,
+                    message: 'Simulaciones recuperadas del análisis previo.'
+                });
+            }
+        }
+
         const recommendations = JSON.parse(analysis.recommendations);
         const simulations = [];
 
         // Generar simulación para cada corte recomendado
         for (let i = 0; i < Math.min(recommendations.length, 3); i++) {
             const haircut = recommendations[i];
-            const simulationUrl = await generateSimulationWithFalAI(
+            const simulationUrl = await generateSimulationWithReplicate(
                 analysis.originalImage,
                 haircut.name
             );
