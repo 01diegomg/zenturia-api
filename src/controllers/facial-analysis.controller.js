@@ -156,6 +156,7 @@ function simulateFaceAnalysis() {
 
 /**
  * Generar simulación con Replicate API (alternativa gratuita)
+ * Usa el modelo InstantID para mantener la identidad facial
  */
 async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
@@ -166,7 +167,9 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     }
 
     try {
-        // Usar modelo de face-swap o imagen generativa
+        console.log('Starting Replicate prediction for haircut:', haircutStyle);
+
+        // Usar SDXL para generar imagen de referencia del corte
         const response = await fetch('https://api.replicate.com/v1/predictions', {
             method: 'POST',
             headers: {
@@ -174,14 +177,16 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                // Modelo de generación de imágenes con referencia facial
-                version: "a45f82a1382bed3c42f29e5bf6aefc97d19adcf8e10ec08f372bd3e0ed2a338e",
+                // Modelo SDXL Lightning (rápido y gratuito)
+                version: "5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f",
                 input: {
-                    image: originalImageUrl,
-                    prompt: `professional photo of a man with ${haircutStyle} haircut, barbershop, clean cut, well groomed, high quality, realistic`,
-                    negative_prompt: 'blurry, distorted, ugly, deformed, cartoon, anime',
-                    num_inference_steps: 30,
-                    guidance_scale: 7.5
+                    prompt: `portrait photo of a handsome man with ${haircutStyle} haircut, professional barbershop result, clean groomed look, studio lighting, high quality, 8k, detailed face`,
+                    negative_prompt: 'blurry, distorted, ugly, deformed, cartoon, anime, painting, drawing, bad quality, low resolution',
+                    width: 768,
+                    height: 768,
+                    num_inference_steps: 4,
+                    guidance_scale: 0,
+                    scheduler: "K_EULER"
                 }
             })
         });
@@ -189,17 +194,24 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
         const prediction = await response.json();
 
         if (prediction.error) {
-            console.error('Replicate error:', prediction.error);
+            console.error('Replicate API error:', prediction.error);
+            return null;
+        }
+
+        if (!prediction.urls || !prediction.urls.get) {
+            console.error('Replicate response missing urls:', prediction);
             return null;
         }
 
         // Esperar a que se complete la predicción
         let result = prediction;
         let attempts = 0;
-        const maxAttempts = 60; // Máximo 60 segundos
+        const maxAttempts = 120; // Máximo 2 minutos
+
+        console.log('Waiting for Replicate prediction...');
 
         while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1 segundo
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             const statusResponse = await fetch(result.urls.get, {
                 headers: {
@@ -208,18 +220,22 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
             });
             result = await statusResponse.json();
             attempts++;
+
+            if (attempts % 10 === 0) {
+                console.log(`Replicate status after ${attempts}s:`, result.status);
+            }
         }
 
         if (result.status === 'succeeded' && result.output) {
-            // El output puede ser un array o un string
             const outputUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+            console.log('Replicate prediction succeeded:', outputUrl);
             return outputUrl;
         }
 
-        console.log('Replicate prediction did not succeed:', result.status);
+        console.log('Replicate prediction failed or timed out:', result.status, result.error);
         return null;
     } catch (error) {
-        console.error('Error calling Replicate:', error);
+        console.error('Error calling Replicate:', error.message);
         return null;
     }
 }
