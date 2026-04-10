@@ -1,7 +1,14 @@
 // --- src/controllers/facial-analysis.controller.js ---
-// Módulo IA: Análisis Facial + Simulaciones con Face++ y FAL.ai
+// Módulo IA Premium: Análisis Facial + Simulaciones con Face++ y Replicate/FAL.ai
 import { prisma } from '../config/database.js';
 import cloudinary from '../../cloudinaryConfig.js';
+
+// Configuración de reintentos
+const RETRY_CONFIG = {
+    maxRetries: 3,
+    baseDelay: 1000,
+    maxDelay: 5000,
+};
 
 // Mapeo de formas de rostro a cortes recomendados
 const FACE_SHAPE_RECOMMENDATIONS = {
@@ -17,22 +24,18 @@ const FACE_SHAPE_RECOMMENDATIONS = {
 // Ajustes de recomendaciones según tipo de cabello
 const HAIR_TYPE_ADJUSTMENTS = {
     'straight': {
-        // Cabello lacio: cualquier corte funciona bien
         preferred: ['Fade', 'Pompadour', 'Side Part', 'Undercut', 'Slick Back'],
         avoid: []
     },
     'wavy': {
-        // Cabello ondulado: cortes con textura
         preferred: ['Textured', 'Messy', 'Medium Length', 'Layered', 'Quiff'],
         avoid: ['Slick Back']
     },
     'curly': {
-        // Cabello rizado: mantener volumen arriba
         preferred: ['Curly Top', 'Taper Fade', 'High Top', 'Fringe', 'Natural'],
         avoid: ['Pompadour', 'Slick Back', 'Crew Cut corto']
     },
     'coily': {
-        // Cabello afro: cortes que respeten la textura
         preferred: ['Afro', 'High Top Fade', 'Taper', 'Twist Out', 'Freeform'],
         avoid: ['Pompadour', 'Side Part tradicional']
     }
@@ -41,21 +44,49 @@ const HAIR_TYPE_ADJUSTMENTS = {
 // Ajustes según grosor del cabello
 const HAIR_THICKNESS_ADJUSTMENTS = {
     'thin': {
-        // Cabello fino: cortes que den volumen
         preferred: ['Textured', 'Layered', 'Messy', 'Fringe'],
         avoid: ['Undercut largo', 'Slick Back']
     },
     'medium': {
-        // Cabello normal: cualquier corte funciona
         preferred: [],
         avoid: []
     },
     'thick': {
-        // Cabello grueso: cortes con degradado
         preferred: ['Fade', 'Taper', 'Undercut', 'Textured Crop'],
         avoid: []
     }
 };
+
+/**
+ * Utilidad para esperar con delay
+ */
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Ejecutar función con reintentos y backoff exponencial
+ */
+async function withRetry(fn, context = 'Operation') {
+    let lastError;
+
+    for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error;
+
+            if (attempt < RETRY_CONFIG.maxRetries) {
+                const delay = Math.min(
+                    RETRY_CONFIG.baseDelay * Math.pow(2, attempt),
+                    RETRY_CONFIG.maxDelay
+                );
+                console.log(`[${context}] Reintento ${attempt + 1}/${RETRY_CONFIG.maxRetries} en ${delay}ms...`);
+                await sleep(delay);
+            }
+        }
+    }
+
+    throw lastError;
+}
 
 /**
  * Obtener recomendaciones ajustadas por tipo de cabello
@@ -63,22 +94,18 @@ const HAIR_THICKNESS_ADJUSTMENTS = {
 function getAdjustedRecommendations(faceShape, hairType, hairThickness) {
     let recommendations = [...(FACE_SHAPE_RECOMMENDATIONS[faceShape] || FACE_SHAPE_RECOMMENDATIONS['oval'])];
 
-    // Si tenemos información del tipo de cabello, ajustar
     if (hairType && HAIR_TYPE_ADJUSTMENTS[hairType]) {
         const hairAdjust = HAIR_TYPE_ADJUSTMENTS[hairType];
-        // Filtrar cortes que no van bien con el tipo de cabello
         recommendations = recommendations.filter(cut => {
             const cutLower = cut.toLowerCase();
             return !hairAdjust.avoid.some(avoid => cutLower.includes(avoid.toLowerCase()));
         });
-        // Agregar cortes preferidos si hay espacio
         if (recommendations.length < 3) {
             const preferred = hairAdjust.preferred.slice(0, 3 - recommendations.length);
             recommendations = [...recommendations, ...preferred];
         }
     }
 
-    // Ajustar por grosor
     if (hairThickness && HAIR_THICKNESS_ADJUSTMENTS[hairThickness]) {
         const thickAdjust = HAIR_THICKNESS_ADJUSTMENTS[hairThickness];
         recommendations = recommendations.filter(cut => {
@@ -91,19 +118,18 @@ function getAdjustedRecommendations(faceShape, hairType, hairThickness) {
 }
 
 /**
- * Analizar rostro con Face++ API
+ * Analizar rostro con Face++ API (con reintentos)
  */
 async function analyzeFaceWithFacePlusPlus(imageUrl) {
     const FACEPP_API_KEY = process.env.FACEPP_API_KEY;
     const FACEPP_API_SECRET = process.env.FACEPP_API_SECRET;
 
     if (!FACEPP_API_KEY || !FACEPP_API_SECRET) {
-        // Si no hay credenciales, usar análisis simulado para desarrollo
         console.log('Face++ credentials not found, using simulated analysis');
         return simulateFaceAnalysis();
     }
 
-    try {
+    return withRetry(async () => {
         const formData = new URLSearchParams();
         formData.append('api_key', FACEPP_API_KEY);
         formData.append('api_secret', FACEPP_API_SECRET);
@@ -117,6 +143,11 @@ async function analyzeFaceWithFacePlusPlus(imageUrl) {
 
         const data = await response.json();
 
+        if (data.error_message) {
+            console.error('Face++ API error:', data.error_message);
+            throw new Error(data.error_message);
+        }
+
         if (data.faces && data.faces.length > 0) {
             const face = data.faces[0];
             const faceShape = face.attributes?.faceshape?.value || 'oval';
@@ -128,16 +159,12 @@ async function analyzeFaceWithFacePlusPlus(imageUrl) {
             };
         }
 
-        // NO se detectó ningún rostro en la imagen
         return {
             success: false,
             error: 'NO_FACE_DETECTED',
-            message: 'No se detectó ningún rostro en la imagen. Por favor, sube una foto donde se vea claramente tu cara.'
+            message: 'No se detectó ningún rostro en la imagen.'
         };
-    } catch (error) {
-        console.error('Error calling Face++ API:', error);
-        return simulateFaceAnalysis();
-    }
+    }, 'Face++ Analysis');
 }
 
 /**
@@ -155,21 +182,19 @@ function simulateFaceAnalysis() {
 }
 
 /**
- * Generar simulación con Replicate API (alternativa gratuita)
- * Usa el modelo InstantID para mantener la identidad facial
+ * Generar simulación con Replicate API - Usando InstantID para mantener tu cara
  */
 async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
     if (!REPLICATE_API_TOKEN) {
-        console.log('Replicate API token not found, trying FAL.ai...');
         return generateSimulationWithFalAI(originalImageUrl, haircutStyle);
     }
 
     try {
-        console.log('Starting Replicate prediction for haircut:', haircutStyle);
+        console.log(`[Replicate] Generating simulation for: ${haircutStyle} with image: ${originalImageUrl}`);
 
-        // Usar SDXL para generar imagen de referencia del corte
+        // Usar face-to-many - modelo que MANTIENE tu cara y aplica estilos
         const response = await fetch('https://api.replicate.com/v1/predictions', {
             method: 'POST',
             headers: {
@@ -177,65 +202,63 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                // Modelo SDXL Lightning (rápido y gratuito)
-                version: "5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f",
+                // face-to-many by fofr - transforma tu cara manteniendo identidad
+                version: "a07f252abbbd832009640b27f063ea52d87d7a23a185ca165bec23b5adc8faced",
                 input: {
-                    prompt: `portrait photo of a handsome man with ${haircutStyle} haircut, professional barbershop result, clean groomed look, studio lighting, high quality, 8k, detailed face`,
-                    negative_prompt: 'blurry, distorted, ugly, deformed, cartoon, anime, painting, drawing, bad quality, low resolution',
-                    width: 768,
-                    height: 768,
-                    num_inference_steps: 4,
-                    guidance_scale: 0,
-                    scheduler: "K_EULER"
+                    image: originalImageUrl,
+                    style: "3D",
+                    prompt: `professional portrait, person with stylish ${haircutStyle} haircut, barbershop quality, well groomed, studio lighting`,
+                    negative_prompt: 'blurry, ugly, deformed, bad quality',
+                    instant_id_strength: 0.9,
+                    denoising_strength: 0.65
                 }
             })
         });
 
-        const prediction = await response.json();
+        let prediction = await response.json();
+        console.log(`[Replicate] Response status:`, response.status);
 
         if (prediction.error) {
-            console.error('Replicate API error:', prediction.error);
+            console.error('[Replicate] API error:', prediction.error);
             return null;
         }
 
-        if (!prediction.urls || !prediction.urls.get) {
-            console.error('Replicate response missing urls:', prediction);
+        if (!prediction.urls?.get) {
+            console.error('[Replicate] Response missing urls:', JSON.stringify(prediction).substring(0, 300));
             return null;
         }
 
-        // Esperar a que se complete la predicción
+        console.log(`[Replicate] Prediction started: ${prediction.id}`);
+
+        // Esperar resultado con timeout
         let result = prediction;
         let attempts = 0;
-        const maxAttempts = 120; // Máximo 2 minutos
-
-        console.log('Waiting for Replicate prediction...');
+        const maxAttempts = 180; // 3 minutos máximo
 
         while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await sleep(1000);
 
             const statusResponse = await fetch(result.urls.get, {
-                headers: {
-                    'Authorization': `Token ${REPLICATE_API_TOKEN}`
-                }
+                headers: { 'Authorization': `Token ${REPLICATE_API_TOKEN}` }
             });
             result = await statusResponse.json();
             attempts++;
 
-            if (attempts % 10 === 0) {
-                console.log(`Replicate status after ${attempts}s:`, result.status);
+            if (attempts % 30 === 0) {
+                console.log(`[Replicate] Status after ${attempts}s: ${result.status}`);
             }
         }
 
         if (result.status === 'succeeded' && result.output) {
             const outputUrl = Array.isArray(result.output) ? result.output[0] : result.output;
-            console.log('Replicate prediction succeeded:', outputUrl);
+            console.log(`[Replicate] Success for ${haircutStyle}: ${outputUrl}`);
             return outputUrl;
         }
 
-        console.log('Replicate prediction failed or timed out:', result.status, result.error);
+        console.log(`[Replicate] Failed or timed out: ${result.status}`, result.error || '');
         return null;
     } catch (error) {
-        console.error('Error calling Replicate:', error.message);
+        console.error('[Replicate] Error:', error.message);
         return null;
     }
 }
@@ -247,11 +270,13 @@ async function generateSimulationWithFalAI(originalImageUrl, haircutStyle) {
     const FAL_API_KEY = process.env.FAL_API_KEY;
 
     if (!FAL_API_KEY) {
-        console.log('FAL.ai API key not found, skipping simulation');
+        console.log('[FAL.ai] API key not found');
         return null;
     }
 
     try {
+        console.log(`[FAL.ai] Generating simulation for: ${haircutStyle}`);
+
         const response = await fetch('https://fal.run/fal-ai/face-to-sticker', {
             method: 'POST',
             headers: {
@@ -268,7 +293,7 @@ async function generateSimulationWithFalAI(originalImageUrl, haircutStyle) {
         const data = await response.json();
         return data.image?.url || null;
     } catch (error) {
-        console.error('Error calling FAL.ai:', error);
+        console.error('[FAL.ai] Error:', error.message);
         return null;
     }
 }
@@ -287,10 +312,18 @@ export async function analyzeFace(req, res) {
             });
         }
 
-        // 1. Subir imagen original a Cloudinary
+        console.log(`[Analysis] Starting for user ${userId}`);
+
+        // 1. Subir imagen a Cloudinary
         const uploadResult = await new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
-                { folder: 'barberia/facial-analysis' },
+                {
+                    folder: 'barberia/facial-analysis',
+                    transformation: [
+                        { quality: 'auto:best' },
+                        { fetch_format: 'auto' }
+                    ]
+                },
                 (error, result) => {
                     if (error) reject(error);
                     else resolve(result);
@@ -300,29 +333,27 @@ export async function analyzeFace(req, res) {
         });
 
         const originalImageUrl = uploadResult.secure_url;
+        console.log(`[Analysis] Image uploaded: ${originalImageUrl}`);
 
         // 2. Analizar rostro con Face++
         const faceAnalysis = await analyzeFaceWithFacePlusPlus(originalImageUrl);
 
-        // Verificar si se detectó un rostro
         if (!faceAnalysis.success) {
             return res.status(400).json({
                 success: false,
                 error: faceAnalysis.error,
-                message: faceAnalysis.message || 'No se pudo detectar un rostro en la imagen.'
+                message: faceAnalysis.message
             });
         }
 
         const faceShape = faceAnalysis.faceShape;
-
-        // Obtener tipo de cabello del body (enviado desde la app)
         const hairType = req.body?.hairType || null;
         const hairThickness = req.body?.hairThickness || null;
 
-        // 3. Obtener recomendaciones ajustadas por forma de rostro Y tipo de cabello
+        // 3. Obtener recomendaciones ajustadas
         const recommendedStyles = getAdjustedRecommendations(faceShape, hairType, hairThickness);
 
-        // 4. Buscar cortes del catálogo que coincidan
+        // 4. Buscar cortes del catálogo
         const haircuts = await prisma.haircut.findMany({
             where: {
                 OR: recommendedStyles.map(style => ({
@@ -332,19 +363,28 @@ export async function analyzeFace(req, res) {
             take: 3
         });
 
-        // Si no hay suficientes cortes en el catálogo, obtener aleatorios
         let recommendations = haircuts;
         if (haircuts.length < 3) {
             const additionalHaircuts = await prisma.haircut.findMany({
-                where: {
-                    id: { notIn: haircuts.map(h => h.id) }
-                },
+                where: { id: { notIn: haircuts.map(h => h.id) } },
                 take: 3 - haircuts.length
             });
             recommendations = [...haircuts, ...additionalHaircuts];
         }
 
-        // 5. Guardar análisis en la base de datos
+        // Si aún no hay suficientes, crear recomendaciones con nombres sugeridos
+        if (recommendations.length < 3) {
+            const missingCount = 3 - recommendations.length;
+            const defaultRecs = recommendedStyles.slice(0, missingCount).map((name, i) => ({
+                id: `suggested-${i}`,
+                name: name,
+                description: `Corte recomendado para rostro ${getFaceShapeInSpanish(faceShape).toLowerCase()}`,
+                imageUrl: null
+            }));
+            recommendations = [...recommendations, ...defaultRecs];
+        }
+
+        // 5. Guardar análisis
         const analysis = await prisma.facialAnalysis.create({
             data: {
                 userId,
@@ -354,10 +394,13 @@ export async function analyzeFace(req, res) {
                 recommendations: JSON.stringify(recommendations.map(h => ({
                     id: h.id,
                     name: h.name,
-                    imageUrl: h.imageUrl
+                    imageUrl: h.imageUrl || null,
+                    description: h.description || null
                 })))
             }
         });
+
+        console.log(`[Analysis] Completed: ${analysis.id} - ${faceShape}`);
 
         res.status(200).json({
             success: true,
@@ -370,14 +413,14 @@ export async function analyzeFace(req, res) {
                 recommendations: recommendations.map(h => ({
                     id: h.id,
                     name: h.name,
-                    description: h.description,
-                    imageUrl: h.imageUrl
+                    description: h.description || null,
+                    imageUrl: h.imageUrl || null
                 })),
                 simulated: faceAnalysis.simulated || false
             }
         });
     } catch (error) {
-        console.error('Error en análisis facial:', error);
+        console.error('[Analysis] Error:', error);
         res.status(500).json({
             success: false,
             message: 'Error del servidor al analizar el rostro.'
@@ -386,14 +429,16 @@ export async function analyzeFace(req, res) {
 }
 
 /**
- * POST /facial-analysis/:id/simulate - Generar simulaciones con Replicate/FAL.ai
+ * POST /facial-analysis/:id/simulate - Generar simulaciones en PARALELO
  */
 export async function generateSimulations(req, res) {
     try {
         const { id } = req.params;
         const userId = req.user.userId;
 
-        // Verificar si algún servicio de IA está configurado (Replicate o FAL.ai)
+        console.log(`[Simulations] Starting for analysis ${id}`);
+
+        // Verificar servicios de IA
         const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
         const FAL_API_KEY = process.env.FAL_API_KEY;
 
@@ -401,11 +446,11 @@ export async function generateSimulations(req, res) {
             return res.status(200).json({
                 success: true,
                 simulations: [],
-                message: 'El servicio de simulaciones no está configurado. Contacta al administrador.'
+                message: 'El servicio de simulaciones no está configurado.'
             });
         }
 
-        // Verificar que el análisis existe y pertenece al usuario
+        // Verificar análisis
         const analysis = await prisma.facialAnalysis.findFirst({
             where: { id, userId }
         });
@@ -417,10 +462,10 @@ export async function generateSimulations(req, res) {
             });
         }
 
-        // Verificar si ya tiene simulaciones generadas
+        // Verificar simulaciones existentes
         if (analysis.simulation1 || analysis.simulation2 || analysis.simulation3) {
-            const existingSimulations = [];
             const recommendations = JSON.parse(analysis.recommendations);
+            const existingSimulations = [];
 
             if (analysis.simulation1 && recommendations[0]) {
                 existingSimulations.push({
@@ -445,6 +490,7 @@ export async function generateSimulations(req, res) {
             }
 
             if (existingSimulations.length > 0) {
+                console.log(`[Simulations] Returning ${existingSimulations.length} existing simulations`);
                 return res.status(200).json({
                     success: true,
                     simulations: existingSimulations,
@@ -454,34 +500,51 @@ export async function generateSimulations(req, res) {
         }
 
         const recommendations = JSON.parse(analysis.recommendations);
-        const simulations = [];
 
-        // Generar simulación para cada corte recomendado
-        for (let i = 0; i < Math.min(recommendations.length, 3); i++) {
-            const haircut = recommendations[i];
-            const simulationUrl = await generateSimulationWithReplicate(
-                analysis.originalImage,
-                haircut.name
-            );
+        // GENERAR SIMULACIONES EN PARALELO para mayor velocidad
+        console.log(`[Simulations] Generating ${recommendations.length} simulations in parallel...`);
 
-            if (simulationUrl) {
-                // Subir simulación a Cloudinary para persistencia
-                const uploadResult = await cloudinary.uploader.upload(simulationUrl, {
-                    folder: 'barberia/simulations'
-                });
-                simulations.push({
-                    haircutId: haircut.id,
-                    haircutName: haircut.name,
-                    simulationUrl: uploadResult.secure_url
-                });
+        const simulationPromises = recommendations.slice(0, 3).map(async (haircut, index) => {
+            try {
+                const simulationUrl = await generateSimulationWithReplicate(
+                    analysis.originalImage,
+                    haircut.name
+                );
+
+                if (simulationUrl) {
+                    // Subir a Cloudinary para persistencia
+                    const uploadResult = await cloudinary.uploader.upload(simulationUrl, {
+                        folder: 'barberia/simulations',
+                        transformation: [{ quality: 'auto:good' }]
+                    });
+
+                    return {
+                        index,
+                        haircutId: haircut.id,
+                        haircutName: haircut.name,
+                        simulationUrl: uploadResult.secure_url
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error(`[Simulations] Error for ${haircut.name}:`, error.message);
+                return null;
             }
-        }
+        });
 
-        // Actualizar análisis con las simulaciones
+        // Esperar todas las simulaciones en paralelo
+        const results = await Promise.all(simulationPromises);
+        const simulations = results.filter(r => r !== null);
+
+        console.log(`[Simulations] Generated ${simulations.length} of ${recommendations.length}`);
+
+        // Actualizar análisis con simulaciones
         const updateData = {};
-        if (simulations[0]) updateData.simulation1 = simulations[0].simulationUrl;
-        if (simulations[1]) updateData.simulation2 = simulations[1].simulationUrl;
-        if (simulations[2]) updateData.simulation3 = simulations[2].simulationUrl;
+        simulations.forEach(sim => {
+            if (sim.index === 0) updateData.simulation1 = sim.simulationUrl;
+            if (sim.index === 1) updateData.simulation2 = sim.simulationUrl;
+            if (sim.index === 2) updateData.simulation3 = sim.simulationUrl;
+        });
 
         if (Object.keys(updateData).length > 0) {
             await prisma.facialAnalysis.update({
@@ -492,10 +555,14 @@ export async function generateSimulations(req, res) {
 
         res.status(200).json({
             success: true,
-            simulations
+            simulations: simulations.map(s => ({
+                haircutId: s.haircutId,
+                haircutName: s.haircutName,
+                simulationUrl: s.simulationUrl
+            }))
         });
     } catch (error) {
-        console.error('Error generando simulaciones:', error);
+        console.error('[Simulations] Error:', error);
         res.status(500).json({
             success: false,
             message: 'Error del servidor al generar simulaciones.'
@@ -504,7 +571,7 @@ export async function generateSimulations(req, res) {
 }
 
 /**
- * GET /facial-analysis/history - Obtener historial de análisis del usuario
+ * GET /facial-analysis/history - Obtener historial del usuario
  */
 export async function getAnalysisHistory(req, res) {
     try {
@@ -525,12 +592,15 @@ export async function getAnalysisHistory(req, res) {
                 faceShapeSpanish: getFaceShapeInSpanish(a.faceShape),
                 confidence: Math.round(a.confidence),
                 recommendations: JSON.parse(a.recommendations),
-                simulations: [a.simulation1, a.simulation2, a.simulation3].filter(Boolean),
+                simulations: [a.simulation1, a.simulation2, a.simulation3].filter(Boolean).map((url, i) => ({
+                    simulationUrl: url,
+                    haircutName: JSON.parse(a.recommendations)[i]?.name || `Corte ${i + 1}`
+                })),
                 createdAt: a.createdAt
             }))
         });
     } catch (error) {
-        console.error('Error obteniendo historial:', error);
+        console.error('[History] Error:', error);
         res.status(500).json({
             success: false,
             message: 'Error del servidor al obtener historial.'
@@ -539,7 +609,7 @@ export async function getAnalysisHistory(req, res) {
 }
 
 /**
- * GET /facial-analysis/:id - Obtener un análisis específico
+ * GET /facial-analysis/:id - Obtener análisis específico
  */
 export async function getAnalysisById(req, res) {
     try {
@@ -557,6 +627,8 @@ export async function getAnalysisById(req, res) {
             });
         }
 
+        const recommendations = JSON.parse(analysis.recommendations);
+
         res.status(200).json({
             success: true,
             analysis: {
@@ -565,13 +637,18 @@ export async function getAnalysisById(req, res) {
                 faceShape: analysis.faceShape,
                 faceShapeSpanish: getFaceShapeInSpanish(analysis.faceShape),
                 confidence: Math.round(analysis.confidence),
-                recommendations: JSON.parse(analysis.recommendations),
-                simulations: [analysis.simulation1, analysis.simulation2, analysis.simulation3].filter(Boolean),
+                recommendations,
+                simulations: [analysis.simulation1, analysis.simulation2, analysis.simulation3]
+                    .filter(Boolean)
+                    .map((url, i) => ({
+                        simulationUrl: url,
+                        haircutName: recommendations[i]?.name || `Corte ${i + 1}`
+                    })),
                 createdAt: analysis.createdAt
             }
         });
     } catch (error) {
-        console.error('Error obteniendo análisis:', error);
+        console.error('[GetAnalysis] Error:', error);
         res.status(500).json({
             success: false,
             message: 'Error del servidor al obtener análisis.'
