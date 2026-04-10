@@ -438,17 +438,24 @@ export async function generateSimulations(req, res) {
 
         console.log(`[Simulations] Starting for analysis ${id}`);
 
-        // Verificar servicios de IA
+        // Verificar servicios de IA con logging detallado
         const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
         const FAL_API_KEY = process.env.FAL_API_KEY;
 
+        console.log(`[Simulations] Config check:`);
+        console.log(`  - REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN ? `configured (${REPLICATE_API_TOKEN.length} chars, prefix: ${REPLICATE_API_TOKEN.substring(0, 4)}...)` : 'NOT SET'}`);
+        console.log(`  - FAL_API_KEY: ${FAL_API_KEY ? `configured (${FAL_API_KEY.length} chars)` : 'NOT SET'}`);
+
         if (!REPLICATE_API_TOKEN && !FAL_API_KEY) {
+            console.log(`[Simulations] ERROR: Neither REPLICATE_API_TOKEN nor FAL_API_KEY is configured in environment variables`);
             return res.status(200).json({
                 success: true,
                 simulations: [],
-                message: 'El servicio de simulaciones no está configurado.'
+                message: 'El servicio de simulaciones no está configurado. Por favor configure REPLICATE_API_TOKEN o FAL_API_KEY en las variables de entorno.'
             });
         }
+
+        console.log(`[Simulations] Services available - proceeding with generation`);
 
         // Verificar análisis
         const analysis = await prisma.facialAnalysis.findFirst({
