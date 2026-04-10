@@ -61,6 +61,67 @@ router.get('/ai-status', (req, res) => {
     res.json(status);
 });
 
+// Test Replicate API endpoint - verifies billing and API access
+router.get('/ai-test-replicate', async (req, res) => {
+    const token = process.env.REPLICATE_API_TOKEN;
+    if (!token) {
+        return res.json({ success: false, error: 'REPLICATE_API_TOKEN not configured' });
+    }
+
+    try {
+        // Test 1: Check account status
+        const accountRes = await fetch('https://api.replicate.com/v1/account', {
+            headers: { 'Authorization': `Token ${token}` }
+        });
+        const account = await accountRes.json();
+
+        if (accountRes.status !== 200) {
+            return res.json({
+                success: false,
+                error: 'Invalid token or API error',
+                status: accountRes.status,
+                details: account
+            });
+        }
+
+        // Test 2: Try to create a simple prediction to check billing
+        const testRes = await fetch('https://api.replicate.com/v1/predictions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                version: "a07f252abbbd832009640b27f063ea52d87d7a23a185ca165bec23b5adc8faced",
+                input: {
+                    image: "https://replicate.delivery/pbxt/JvLi9smWKKDfQpylBYosqQRfPKZPntuAziesp0VuPjidq61n/musk.jpg",
+                    style: "3D",
+                    prompt: "test"
+                }
+            })
+        });
+        const testPrediction = await testRes.json();
+
+        res.json({
+            success: testRes.status === 201,
+            account: {
+                username: account.username,
+                type: account.type,
+                github_url: account.github_url
+            },
+            predictionTest: {
+                status: testRes.status,
+                id: testPrediction.id,
+                error: testPrediction.error || null,
+                detail: testPrediction.detail || null
+            },
+            billingRequired: testRes.status === 402 || (testPrediction.detail && testPrediction.detail.includes('billing'))
+        });
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+});
+
 // Direct upload endpoint (matches original /upload) - requires admin auth
 router.post('/upload', authenticateToken, requireAdmin, upload.single('image'), galleryController.uploadImage);
 
