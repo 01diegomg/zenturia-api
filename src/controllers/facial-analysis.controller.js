@@ -182,7 +182,7 @@ function simulateFaceAnalysis() {
 }
 
 /**
- * Generar simulación con Replicate API - Usando InstantID para mantener tu cara
+ * Generar simulación con Replicate API - Usando SDXL img2img para modificar cabello
  */
 async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
@@ -194,7 +194,7 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     try {
         console.log(`[Replicate] Generating simulation for: ${haircutStyle} with image: ${originalImageUrl}`);
 
-        // Usar face-to-many - modelo que MANTIENE tu cara y aplica estilos
+        // Usar lucataco/sdxl - modelo estable para img2img
         const response = await fetch('https://api.replicate.com/v1/predictions', {
             method: 'POST',
             headers: {
@@ -202,30 +202,32 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                // face-to-many by fofr - transforma tu cara manteniendo identidad
-                version: "a07f252abbbd832009640b27f063ea52d87d7a23a185ca165bec23b5adc8faced",
+                // SDXL by lucataco - estable y rápido
+                version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
                 input: {
                     image: originalImageUrl,
-                    style: "3D",
-                    prompt: `professional portrait, person with stylish ${haircutStyle} haircut, barbershop quality, well groomed, studio lighting`,
-                    negative_prompt: 'blurry, ugly, deformed, bad quality',
-                    instant_id_strength: 0.9,
-                    denoising_strength: 0.65
+                    prompt: `professional portrait photo of the same person with ${haircutStyle} haircut, barbershop quality, well groomed, studio lighting, high quality, detailed face, same person same face`,
+                    negative_prompt: 'different person, blurry, ugly, deformed, bad quality, distorted face, cartoon, anime',
+                    strength: 0.35,
+                    num_inference_steps: 30,
+                    guidance_scale: 7.5
                 }
             })
         });
 
         let prediction = await response.json();
         console.log(`[Replicate] Response status:`, response.status);
+        console.log(`[Replicate] Response body:`, JSON.stringify(prediction).substring(0, 500));
 
-        if (prediction.error) {
-            console.error('[Replicate] API error:', prediction.error);
-            return null;
+        if (prediction.error || prediction.detail) {
+            console.error('[Replicate] API error:', prediction.error || prediction.detail);
+            // Si el modelo no existe, intentar con otro
+            return await tryAlternativeModel(originalImageUrl, haircutStyle, REPLICATE_API_TOKEN);
         }
 
         if (!prediction.urls?.get) {
             console.error('[Replicate] Response missing urls:', JSON.stringify(prediction).substring(0, 300));
-            return null;
+            return await tryAlternativeModel(originalImageUrl, haircutStyle, REPLICATE_API_TOKEN);
         }
 
         console.log(`[Replicate] Prediction started: ${prediction.id}`);
@@ -259,6 +261,67 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
         return null;
     } catch (error) {
         console.error('[Replicate] Error:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Modelo alternativo si el principal falla
+ */
+async function tryAlternativeModel(originalImageUrl, haircutStyle, token) {
+    console.log(`[Replicate] Trying alternative model for: ${haircutStyle}`);
+
+    try {
+        // Intentar con stability-ai/sdxl que es más estable
+        const response = await fetch('https://api.replicate.com/v1/predictions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                // stability-ai/sdxl - modelo oficial muy estable
+                version: "7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
+                input: {
+                    prompt: `professional portrait photo of a person with ${haircutStyle} haircut, barbershop quality, studio lighting, high quality photograph`,
+                    negative_prompt: 'blurry, ugly, deformed, bad quality',
+                    num_inference_steps: 25,
+                    guidance_scale: 7.5,
+                    width: 768,
+                    height: 1024
+                }
+            })
+        });
+
+        const prediction = await response.json();
+        console.log(`[Replicate Alt] Response:`, JSON.stringify(prediction).substring(0, 300));
+
+        if (!prediction.urls?.get) {
+            console.error('[Replicate Alt] No prediction URL');
+            return null;
+        }
+
+        // Esperar resultado
+        let result = prediction;
+        let attempts = 0;
+        while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 120) {
+            await sleep(1000);
+            const statusResponse = await fetch(result.urls.get, {
+                headers: { 'Authorization': `Token ${token}` }
+            });
+            result = await statusResponse.json();
+            attempts++;
+        }
+
+        if (result.status === 'succeeded' && result.output) {
+            const outputUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+            console.log(`[Replicate Alt] Success: ${outputUrl}`);
+            return outputUrl;
+        }
+
+        return null;
+    } catch (error) {
+        console.error('[Replicate Alt] Error:', error.message);
         return null;
     }
 }

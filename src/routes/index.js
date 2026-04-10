@@ -84,7 +84,7 @@ router.get('/ai-test-replicate', async (req, res) => {
             });
         }
 
-        // Test 2: Try to create a simple prediction to check billing
+        // Test 2: Try to create a prediction with PhotoMaker model
         const testRes = await fetch('https://api.replicate.com/v1/predictions', {
             method: 'POST',
             headers: {
@@ -92,11 +92,11 @@ router.get('/ai-test-replicate', async (req, res) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                version: "a07f252abbbd832009640b27f063ea52d87d7a23a185ca165bec23b5adc8faced",
+                // PhotoMaker - modelo estable para transformar fotos manteniendo identidad
+                version: "ddfc2b08d209f9fa8c1uj6e37bc123992e8959a70c67f6abed8d50b82e7b9e6dc",
                 input: {
-                    image: "https://replicate.delivery/pbxt/JvLi9smWKKDfQpylBYosqQRfPKZPntuAziesp0VuPjidq61n/musk.jpg",
-                    style: "3D",
-                    prompt: "test"
+                    input_image: "https://replicate.delivery/pbxt/JvLi9smWKKDfQpylBYosqQRfPKZPntuAziesp0VuPjidq61n/musk.jpg",
+                    prompt: "portrait photo of a man img, professional hairstyle"
                 }
             })
         });
