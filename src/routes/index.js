@@ -61,17 +61,18 @@ router.get('/ai-status', (req, res) => {
     res.json(status);
 });
 
-// Test Replicate API endpoint - tests multiple models to find working ones
+// Test Replicate API endpoint - find InstantID and other models
 router.get('/ai-test-replicate', async (req, res) => {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) {
         return res.json({ success: false, error: 'REPLICATE_API_TOKEN not configured' });
     }
 
+    // Models to test including InstantID
     const modelsToTest = [
-        { name: 'sdxl-lightning', model: 'bytedance/sdxl-lightning-4step' },
-        { name: 'flux-schnell', model: 'black-forest-labs/flux-schnell' },
-        { name: 'stable-diffusion', model: 'stability-ai/stable-diffusion' }
+        { name: 'instantid', model: 'zsxkib/instant-id' },
+        { name: 'photomaker', model: 'tencentarc/photomaker' },
+        { name: 'sdxl-lightning', model: 'bytedance/sdxl-lightning-4step' }
     ];
 
     try {
@@ -85,30 +86,11 @@ router.get('/ai-test-replicate', async (req, res) => {
                 const versions = await versionsRes.json();
                 const latestVersion = versions.results?.[0]?.id;
 
-                if (latestVersion) {
-                    // Try a quick prediction
-                    const testRes = await fetch('https://api.replicate.com/v1/predictions', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Token ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            version: latestVersion,
-                            input: { prompt: "test haircut portrait" }
-                        })
-                    });
-                    const prediction = await testRes.json();
-
-                    results[m.name] = {
-                        available: true,
-                        version: latestVersion,
-                        canCreate: testRes.status === 201,
-                        error: prediction.error || prediction.detail || null
-                    };
-                } else {
-                    results[m.name] = { available: false };
-                }
+                results[m.name] = {
+                    available: !!latestVersion,
+                    version: latestVersion || null,
+                    model: m.model
+                };
             } catch (e) {
                 results[m.name] = { available: false, error: e.message };
             }
