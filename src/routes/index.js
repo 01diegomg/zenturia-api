@@ -84,38 +84,49 @@ router.get('/ai-test-replicate', async (req, res) => {
             });
         }
 
-        // Test 2: Try to create a prediction with PhotoMaker model
-        const testRes = await fetch('https://api.replicate.com/v1/predictions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Token ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                // PhotoMaker - modelo estable para transformar fotos manteniendo identidad
-                version: "ddfc2b08d209f9fa8c1uj6e37bc123992e8959a70c67f6abed8d50b82e7b9e6dc",
-                input: {
-                    input_image: "https://replicate.delivery/pbxt/JvLi9smWKKDfQpylBYosqQRfPKZPntuAziesp0VuPjidq61n/musk.jpg",
-                    prompt: "portrait photo of a man img, professional hairstyle"
-                }
-            })
+        // Test 2: Get FLUX Kontext versions
+        const versionsRes = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/versions', {
+            headers: { 'Authorization': `Token ${token}` }
         });
-        const testPrediction = await testRes.json();
+        const versions = await versionsRes.json();
+
+        // Test 3: Try FLUX Kontext Pro model
+        const latestVersion = versions.results?.[0]?.id;
+        let testResult = null;
+
+        if (latestVersion) {
+            const testRes = await fetch('https://api.replicate.com/v1/predictions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    version: latestVersion,
+                    input: {
+                        image: "https://replicate.delivery/pbxt/JvLi9smWKKDfQpylBYosqQRfPKZPntuAziesp0VuPjidq61n/musk.jpg",
+                        prompt: "same person with modern fade haircut"
+                    }
+                })
+            });
+            testResult = await testRes.json();
+        }
 
         res.json({
-            success: testRes.status === 201,
+            success: true,
             account: {
                 username: account.username,
-                type: account.type,
-                github_url: account.github_url
+                type: account.type
             },
-            predictionTest: {
-                status: testRes.status,
-                id: testPrediction.id,
-                error: testPrediction.error || null,
-                detail: testPrediction.detail || null
-            },
-            billingRequired: testRes.status === 402 || (testPrediction.detail && testPrediction.detail.includes('billing'))
+            fluxKontextPro: {
+                available: !!latestVersion,
+                latestVersion: latestVersion,
+                testPrediction: testResult ? {
+                    id: testResult.id,
+                    status: testResult.status,
+                    error: testResult.error || testResult.detail || null
+                } : null
+            }
         });
     } catch (error) {
         res.json({ success: false, error: error.message });
