@@ -182,20 +182,21 @@ function simulateFaceAnalysis() {
 }
 
 /**
- * Generar simulación con Replicate API - Usando SDXL Lightning (rápido y eficiente)
+ * Generar simulación con Replicate API - SDXL Lightning
+ * Genera imágenes de referencia de alta calidad de cortes de cabello
  */
 async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
     if (!REPLICATE_API_TOKEN) {
+        console.log('[Replicate] No token, trying FAL.ai');
         return generateSimulationWithFalAI(originalImageUrl, haircutStyle);
     }
 
     try {
         console.log(`[Replicate] Generating simulation for: ${haircutStyle}`);
 
-        // Usar SDXL Lightning - modelo rápido y eficiente (4 steps)
-        // Version ID confirmado funcionando
+        // SDXL Lightning - modelo verificado funcionando
         const response = await fetch('https://api.replicate.com/v1/predictions', {
             method: 'POST',
             headers: {
@@ -203,70 +204,64 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                // bytedance/sdxl-lightning-4step - súper rápido
                 version: "6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
                 input: {
-                    prompt: `professional barbershop portrait photo, man with stylish ${haircutStyle} haircut, well groomed, studio lighting, high quality photograph, detailed face, realistic`,
-                    negative_prompt: 'blurry, ugly, deformed, bad quality, cartoon, anime, drawing',
+                    prompt: `professional barbershop photo, handsome young man with perfect ${haircutStyle} haircut, clean shaven, studio lighting, portrait photography, 4k, high detail, photorealistic, well groomed gentleman`,
+                    negative_prompt: 'blurry, ugly, deformed, bad quality, cartoon, anime, drawing, low quality, distorted, beard, mustache',
                     width: 768,
                     height: 1024,
                     num_inference_steps: 4,
-                    guidance_scale: 1
+                    guidance_scale: 1.5
                 }
             })
         });
 
-        let prediction = await response.json();
-        console.log(`[Replicate] Response status:`, response.status);
+        const prediction = await response.json();
+        console.log(`[Replicate] Response:`, response.status, prediction.id || prediction.detail);
 
-        // Verificar si hay error de billing
-        if (prediction.detail && prediction.detail.includes('insufficient credit')) {
-            console.error('[Replicate] BILLING ERROR: No credits available');
-            console.error('[Replicate] User needs to add payment at: https://replicate.com/account/billing');
-            return null;
-        }
-
-        if (prediction.error || prediction.detail) {
-            console.error('[Replicate] API error:', prediction.error || prediction.detail);
+        // Errores conocidos
+        if (prediction.detail) {
+            if (prediction.detail.includes('insufficient credit')) {
+                console.error('[Replicate] ERROR: Sin créditos. Agregar en: https://replicate.com/account/billing');
+            } else if (prediction.detail.includes('rate limit')) {
+                console.error('[Replicate] ERROR: Rate limit. Esperando...');
+                await sleep(10000);
+                return generateSimulationWithReplicate(originalImageUrl, haircutStyle);
+            }
             return null;
         }
 
         if (!prediction.urls?.get) {
-            console.error('[Replicate] Response missing urls:', JSON.stringify(prediction).substring(0, 300));
+            console.error('[Replicate] No URL de polling:', JSON.stringify(prediction).slice(0, 200));
             return null;
         }
 
-        console.log(`[Replicate] Prediction started: ${prediction.id}`);
-
-        // Esperar resultado - SDXL Lightning es muy rápido (~10 segundos)
+        // Polling - SDXL Lightning es muy rápido (~5-15 segundos)
         let result = prediction;
-        let attempts = 0;
-        const maxAttempts = 60; // 1 minuto máximo (Lightning es rápido)
+        for (let i = 0; i < 60; i++) {
+            if (result.status === 'succeeded' || result.status === 'failed') break;
 
-        while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
             await sleep(1000);
-
-            const statusResponse = await fetch(result.urls.get, {
+            const statusRes = await fetch(result.urls.get, {
                 headers: { 'Authorization': `Token ${REPLICATE_API_TOKEN}` }
             });
-            result = await statusResponse.json();
-            attempts++;
+            result = await statusRes.json();
 
-            if (attempts % 10 === 0) {
-                console.log(`[Replicate] Status after ${attempts}s: ${result.status}`);
+            if (i > 0 && i % 10 === 0) {
+                console.log(`[Replicate] Polling ${i}s: ${result.status}`);
             }
         }
 
         if (result.status === 'succeeded' && result.output) {
-            const outputUrl = Array.isArray(result.output) ? result.output[0] : result.output;
-            console.log(`[Replicate] Success for ${haircutStyle}: ${outputUrl}`);
-            return outputUrl;
+            const url = Array.isArray(result.output) ? result.output[0] : result.output;
+            console.log(`[Replicate] SUCCESS: ${haircutStyle} -> ${url.substring(0, 50)}...`);
+            return url;
         }
 
-        console.log(`[Replicate] Failed or timed out: ${result.status}`, result.error || '');
+        console.log(`[Replicate] FAILED: ${result.status}`, result.error || '');
         return null;
     } catch (error) {
-        console.error('[Replicate] Error:', error.message);
+        console.error('[Replicate] Exception:', error.message);
         return null;
     }
 }
