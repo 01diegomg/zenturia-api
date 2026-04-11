@@ -182,8 +182,8 @@ function simulateFaceAnalysis() {
 }
 
 /**
- * Generar simulación con Replicate API - SDXL Lightning
- * Genera imágenes de referencia de alta calidad de cortes de cabello
+ * Generar simulación con InstantID - MANTIENE TU CARA con nuevo corte
+ * Usa la foto del usuario y genera una imagen con su identidad facial
  */
 async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
@@ -194,9 +194,10 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     }
 
     try {
-        console.log(`[Replicate] Generating simulation for: ${haircutStyle}`);
+        console.log(`[InstantID] Generating simulation for: ${haircutStyle}`);
+        console.log(`[InstantID] Using face from: ${originalImageUrl}`);
 
-        // SDXL Lightning - modelo verificado funcionando
+        // InstantID - Mantiene la identidad facial del usuario
         const response = await fetch('https://api.replicate.com/v1/predictions', {
             method: 'POST',
             headers: {
@@ -204,10 +205,92 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
+                // InstantID by zsxkib - mejor calidad para mantener identidad
+                version: "2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789",
+                input: {
+                    image: originalImageUrl,
+                    prompt: `professional portrait photo of a man with ${haircutStyle} haircut, barbershop quality, well groomed, studio lighting, high quality, 4k, photorealistic, detailed face`,
+                    negative_prompt: 'blurry, ugly, deformed, bad quality, cartoon, anime, low quality, distorted face, extra limbs, bad anatomy, watermark, text',
+                    ip_adapter_scale: 0.8,
+                    controlnet_conditioning_scale: 0.8,
+                    num_inference_steps: 30,
+                    guidance_scale: 5
+                }
+            })
+        });
+
+        const prediction = await response.json();
+        console.log(`[InstantID] Response:`, response.status, prediction.id || prediction.detail);
+
+        // Errores conocidos
+        if (prediction.detail) {
+            if (prediction.detail.includes('insufficient credit')) {
+                console.error('[InstantID] ERROR: Sin créditos');
+                // Fallback a SDXL Lightning
+                return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
+            } else if (prediction.detail.includes('rate limit')) {
+                console.error('[InstantID] Rate limit, esperando 15s...');
+                await sleep(15000);
+                return generateSimulationWithReplicate(originalImageUrl, haircutStyle);
+            }
+            console.error('[InstantID] Error:', prediction.detail);
+            return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
+        }
+
+        if (!prediction.urls?.get) {
+            console.error('[InstantID] No polling URL');
+            return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
+        }
+
+        // Polling - InstantID toma ~30-60 segundos
+        let result = prediction;
+        for (let i = 0; i < 120; i++) {
+            if (result.status === 'succeeded' || result.status === 'failed') break;
+
+            await sleep(1000);
+            const statusRes = await fetch(result.urls.get, {
+                headers: { 'Authorization': `Token ${REPLICATE_API_TOKEN}` }
+            });
+            result = await statusRes.json();
+
+            if (i > 0 && i % 15 === 0) {
+                console.log(`[InstantID] Polling ${i}s: ${result.status}`);
+            }
+        }
+
+        if (result.status === 'succeeded' && result.output) {
+            const url = Array.isArray(result.output) ? result.output[0] : result.output;
+            console.log(`[InstantID] SUCCESS: ${haircutStyle} -> ${url.substring(0, 60)}...`);
+            return url;
+        }
+
+        console.log(`[InstantID] FAILED: ${result.status}`, result.error || '');
+        // Fallback a SDXL si InstantID falla
+        return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
+    } catch (error) {
+        console.error('[InstantID] Exception:', error.message);
+        return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
+    }
+}
+
+/**
+ * Fallback: SDXL Lightning para generar imagen de referencia rápida
+ */
+async function generateSimulationWithSDXL(haircutStyle, token) {
+    try {
+        console.log(`[SDXL Fallback] Generating for: ${haircutStyle}`);
+
+        const response = await fetch('https://api.replicate.com/v1/predictions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
                 version: "6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
                 input: {
-                    prompt: `professional barbershop photo, handsome young man with perfect ${haircutStyle} haircut, clean shaven, studio lighting, portrait photography, 4k, high detail, photorealistic, well groomed gentleman`,
-                    negative_prompt: 'blurry, ugly, deformed, bad quality, cartoon, anime, drawing, low quality, distorted, beard, mustache',
+                    prompt: `professional barbershop portrait, man with ${haircutStyle} haircut, studio lighting, 4k, photorealistic`,
+                    negative_prompt: 'blurry, ugly, deformed, cartoon, anime',
                     width: 768,
                     height: 1024,
                     num_inference_steps: 4,
@@ -217,51 +300,26 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
         });
 
         const prediction = await response.json();
-        console.log(`[Replicate] Response:`, response.status, prediction.id || prediction.detail);
+        if (!prediction.urls?.get) return null;
 
-        // Errores conocidos
-        if (prediction.detail) {
-            if (prediction.detail.includes('insufficient credit')) {
-                console.error('[Replicate] ERROR: Sin créditos. Agregar en: https://replicate.com/account/billing');
-            } else if (prediction.detail.includes('rate limit')) {
-                console.error('[Replicate] ERROR: Rate limit. Esperando...');
-                await sleep(10000);
-                return generateSimulationWithReplicate(originalImageUrl, haircutStyle);
-            }
-            return null;
-        }
-
-        if (!prediction.urls?.get) {
-            console.error('[Replicate] No URL de polling:', JSON.stringify(prediction).slice(0, 200));
-            return null;
-        }
-
-        // Polling - SDXL Lightning es muy rápido (~5-15 segundos)
         let result = prediction;
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < 30; i++) {
             if (result.status === 'succeeded' || result.status === 'failed') break;
-
             await sleep(1000);
             const statusRes = await fetch(result.urls.get, {
-                headers: { 'Authorization': `Token ${REPLICATE_API_TOKEN}` }
+                headers: { 'Authorization': `Token ${token}` }
             });
             result = await statusRes.json();
-
-            if (i > 0 && i % 10 === 0) {
-                console.log(`[Replicate] Polling ${i}s: ${result.status}`);
-            }
         }
 
         if (result.status === 'succeeded' && result.output) {
             const url = Array.isArray(result.output) ? result.output[0] : result.output;
-            console.log(`[Replicate] SUCCESS: ${haircutStyle} -> ${url.substring(0, 50)}...`);
+            console.log(`[SDXL Fallback] SUCCESS: ${url.substring(0, 50)}...`);
             return url;
         }
-
-        console.log(`[Replicate] FAILED: ${result.status}`, result.error || '');
         return null;
     } catch (error) {
-        console.error('[Replicate] Exception:', error.message);
+        console.error('[SDXL Fallback] Error:', error.message);
         return null;
     }
 }
