@@ -363,41 +363,79 @@ async function generateSimulationWithFalAI(originalImageUrl, haircutStyle) {
  * POST /facial-analysis - Analizar rostro y obtener recomendaciones
  */
 export async function analyzeFace(req, res) {
+    const startTime = Date.now();
+    let step = 'init';
+
     try {
         const userId = req.user.userId;
+        step = 'auth';
+        console.log(`[Analysis] Starting for user ${userId}`);
 
         if (!req.file) {
+            console.log(`[Analysis] ERROR: No file received`);
             return res.status(400).json({
                 success: false,
                 message: 'Se requiere una imagen para el análisis.'
             });
         }
 
-        console.log(`[Analysis] Starting for user ${userId}`);
+        console.log(`[Analysis] File received: ${req.file.originalname}, size: ${req.file.size} bytes, mimetype: ${req.file.mimetype}`);
 
         // 1. Subir imagen a Cloudinary
-        const uploadResult = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-                {
-                    folder: 'barberia/facial-analysis',
-                    transformation: [
-                        { quality: 'auto:best' },
-                        { fetch_format: 'auto' }
-                    ]
-                },
-                (error, result) => {
-                    if (error) reject(error);
-                    else resolve(result);
-                }
-            );
-            uploadStream.end(req.file.buffer);
-        });
+        step = 'cloudinary_upload';
+        console.log(`[Analysis] Step 1: Uploading to Cloudinary...`);
+
+        let uploadResult;
+        try {
+            uploadResult = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    {
+                        folder: 'barberia/facial-analysis',
+                        transformation: [
+                            { quality: 'auto:best' },
+                            { fetch_format: 'auto' }
+                        ]
+                    },
+                    (error, result) => {
+                        if (error) {
+                            console.error(`[Analysis] Cloudinary error:`, error);
+                            reject(error);
+                        } else {
+                            resolve(result);
+                        }
+                    }
+                );
+                uploadStream.end(req.file.buffer);
+            });
+        } catch (cloudinaryError) {
+            console.error(`[Analysis] Cloudinary upload failed:`, cloudinaryError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al subir la imagen. Verifica la configuración de Cloudinary.',
+                error: cloudinaryError.message
+            });
+        }
 
         const originalImageUrl = uploadResult.secure_url;
-        console.log(`[Analysis] Image uploaded: ${originalImageUrl}`);
+        console.log(`[Analysis] Step 1 DONE: Image uploaded in ${Date.now() - startTime}ms: ${originalImageUrl}`);
 
         // 2. Analizar rostro con Face++
-        const faceAnalysis = await analyzeFaceWithFacePlusPlus(originalImageUrl);
+        step = 'facepp_analysis';
+        console.log(`[Analysis] Step 2: Analyzing with Face++...`);
+
+        let faceAnalysis;
+        try {
+            faceAnalysis = await analyzeFaceWithFacePlusPlus(originalImageUrl);
+        } catch (faceppError) {
+            console.error(`[Analysis] Face++ failed:`, faceppError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al analizar el rostro con Face++. Verifica las credenciales.',
+                error: faceppError.message
+            });
+        }
+
+        console.log(`[Analysis] Step 2 DONE: Face++ result:`, JSON.stringify(faceAnalysis));
 
         if (!faceAnalysis.success) {
             return res.status(400).json({
@@ -411,26 +449,45 @@ export async function analyzeFace(req, res) {
         const hairType = req.body?.hairType || null;
         const hairThickness = req.body?.hairThickness || null;
 
+        console.log(`[Analysis] Face shape: ${faceShape}, Hair type: ${hairType}, Thickness: ${hairThickness}`);
+
         // 3. Obtener recomendaciones ajustadas
+        step = 'recommendations';
         const recommendedStyles = getAdjustedRecommendations(faceShape, hairType, hairThickness);
+        console.log(`[Analysis] Recommended styles: ${recommendedStyles.join(', ')}`);
 
         // 4. Buscar cortes del catálogo
-        const haircuts = await prisma.haircut.findMany({
-            where: {
-                OR: recommendedStyles.map(style => ({
-                    name: { contains: style, mode: 'insensitive' }
-                }))
-            },
-            take: 3
-        });
+        step = 'db_query';
+        console.log(`[Analysis] Step 4: Querying haircuts from database...`);
+
+        let haircuts = [];
+        try {
+            haircuts = await prisma.haircut.findMany({
+                where: {
+                    OR: recommendedStyles.map(style => ({
+                        name: { contains: style, mode: 'insensitive' }
+                    }))
+                },
+                take: 3
+            });
+        } catch (dbError) {
+            console.error(`[Analysis] Database query failed:`, dbError);
+            // Continue with empty haircuts - will use defaults
+        }
+
+        console.log(`[Analysis] Found ${haircuts.length} matching haircuts`);
 
         let recommendations = haircuts;
         if (haircuts.length < 3) {
-            const additionalHaircuts = await prisma.haircut.findMany({
-                where: { id: { notIn: haircuts.map(h => h.id) } },
-                take: 3 - haircuts.length
-            });
-            recommendations = [...haircuts, ...additionalHaircuts];
+            try {
+                const additionalHaircuts = await prisma.haircut.findMany({
+                    where: { id: { notIn: haircuts.map(h => h.id) } },
+                    take: 3 - haircuts.length
+                });
+                recommendations = [...haircuts, ...additionalHaircuts];
+            } catch (e) {
+                console.log(`[Analysis] Additional haircuts query failed, using defaults`);
+            }
         }
 
         // Si aún no hay suficientes, crear recomendaciones con nombres sugeridos
@@ -446,22 +503,36 @@ export async function analyzeFace(req, res) {
         }
 
         // 5. Guardar análisis
-        const analysis = await prisma.facialAnalysis.create({
-            data: {
-                userId,
-                originalImage: originalImageUrl,
-                faceShape,
-                confidence: faceAnalysis.confidence,
-                recommendations: JSON.stringify(recommendations.map(h => ({
-                    id: h.id,
-                    name: h.name,
-                    imageUrl: h.imageUrl || null,
-                    description: h.description || null
-                })))
-            }
-        });
+        step = 'db_save';
+        console.log(`[Analysis] Step 5: Saving analysis to database...`);
 
-        console.log(`[Analysis] Completed: ${analysis.id} - ${faceShape}`);
+        let analysis;
+        try {
+            analysis = await prisma.facialAnalysis.create({
+                data: {
+                    userId,
+                    originalImage: originalImageUrl,
+                    faceShape,
+                    confidence: faceAnalysis.confidence,
+                    recommendations: JSON.stringify(recommendations.map(h => ({
+                        id: h.id,
+                        name: h.name,
+                        imageUrl: h.imageUrl || null,
+                        description: h.description || null
+                    })))
+                }
+            });
+        } catch (saveError) {
+            console.error(`[Analysis] Failed to save analysis:`, saveError);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al guardar el análisis en la base de datos.',
+                error: saveError.message
+            });
+        }
+
+        const totalTime = Date.now() - startTime;
+        console.log(`[Analysis] COMPLETED in ${totalTime}ms: ${analysis.id} - ${faceShape}`);
 
         res.status(200).json({
             success: true,
@@ -481,10 +552,13 @@ export async function analyzeFace(req, res) {
             }
         });
     } catch (error) {
-        console.error('[Analysis] Error:', error);
+        const totalTime = Date.now() - startTime;
+        console.error(`[Analysis] FATAL ERROR at step '${step}' after ${totalTime}ms:`, error);
+        console.error(`[Analysis] Error stack:`, error.stack);
         res.status(500).json({
             success: false,
-            message: 'Error del servidor al analizar el rostro.'
+            message: `Error del servidor al analizar el rostro (paso: ${step}).`,
+            error: error.message
         });
     }
 }
