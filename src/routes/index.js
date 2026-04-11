@@ -61,73 +61,60 @@ router.get('/ai-status', (req, res) => {
     res.json(status);
 });
 
-// Test Replicate API endpoint - verifies billing and API access
+// Test Replicate API endpoint - tests multiple models to find working ones
 router.get('/ai-test-replicate', async (req, res) => {
     const token = process.env.REPLICATE_API_TOKEN;
     if (!token) {
         return res.json({ success: false, error: 'REPLICATE_API_TOKEN not configured' });
     }
 
+    const modelsToTest = [
+        { name: 'sdxl-lightning', model: 'bytedance/sdxl-lightning-4step' },
+        { name: 'flux-schnell', model: 'black-forest-labs/flux-schnell' },
+        { name: 'stable-diffusion', model: 'stability-ai/stable-diffusion' }
+    ];
+
     try {
-        // Test 1: Check account status
-        const accountRes = await fetch('https://api.replicate.com/v1/account', {
-            headers: { 'Authorization': `Token ${token}` }
-        });
-        const account = await accountRes.json();
+        const results = {};
 
-        if (accountRes.status !== 200) {
-            return res.json({
-                success: false,
-                error: 'Invalid token or API error',
-                status: accountRes.status,
-                details: account
-            });
-        }
+        for (const m of modelsToTest) {
+            try {
+                const versionsRes = await fetch(`https://api.replicate.com/v1/models/${m.model}/versions`, {
+                    headers: { 'Authorization': `Token ${token}` }
+                });
+                const versions = await versionsRes.json();
+                const latestVersion = versions.results?.[0]?.id;
 
-        // Test 2: Get FLUX Kontext versions
-        const versionsRes = await fetch('https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/versions', {
-            headers: { 'Authorization': `Token ${token}` }
-        });
-        const versions = await versionsRes.json();
+                if (latestVersion) {
+                    // Try a quick prediction
+                    const testRes = await fetch('https://api.replicate.com/v1/predictions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Token ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            version: latestVersion,
+                            input: { prompt: "test haircut portrait" }
+                        })
+                    });
+                    const prediction = await testRes.json();
 
-        // Test 3: Try FLUX Kontext Pro model
-        const latestVersion = versions.results?.[0]?.id;
-        let testResult = null;
-
-        if (latestVersion) {
-            const testRes = await fetch('https://api.replicate.com/v1/predictions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Token ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    version: latestVersion,
-                    input: {
-                        image: "https://replicate.delivery/pbxt/JvLi9smWKKDfQpylBYosqQRfPKZPntuAziesp0VuPjidq61n/musk.jpg",
-                        prompt: "same person with modern fade haircut"
-                    }
-                })
-            });
-            testResult = await testRes.json();
-        }
-
-        res.json({
-            success: true,
-            account: {
-                username: account.username,
-                type: account.type
-            },
-            fluxKontextPro: {
-                available: !!latestVersion,
-                latestVersion: latestVersion,
-                testPrediction: testResult ? {
-                    id: testResult.id,
-                    status: testResult.status,
-                    error: testResult.error || testResult.detail || null
-                } : null
+                    results[m.name] = {
+                        available: true,
+                        version: latestVersion,
+                        canCreate: testRes.status === 201,
+                        error: prediction.error || prediction.detail || null
+                    };
+                } else {
+                    results[m.name] = { available: false };
+                }
+            } catch (e) {
+                results[m.name] = { available: false, error: e.message };
             }
-        });
+        }
+
+        res.json({ success: true, models: results });
     } catch (error) {
         res.json({ success: false, error: error.message });
     }
