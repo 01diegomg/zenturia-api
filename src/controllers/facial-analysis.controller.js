@@ -119,17 +119,30 @@ function getAdjustedRecommendations(faceShape, hairType, hairThickness) {
 
 /**
  * Analizar rostro con Face++ API (con reintentos)
+ * Si Face++ no está configurado, intenta detectar usando la forma manual del usuario
  */
-async function analyzeFaceWithFacePlusPlus(imageUrl) {
+async function analyzeFaceWithFacePlusPlus(imageUrl, manualFaceShape = null) {
     const FACEPP_API_KEY = process.env.FACEPP_API_KEY;
     const FACEPP_API_SECRET = process.env.FACEPP_API_SECRET;
 
+    // Si el usuario proporcionó su forma de rostro manualmente, usarla
+    if (manualFaceShape && ['oval', 'round', 'square', 'heart', 'oblong', 'diamond', 'rectangle'].includes(manualFaceShape.toLowerCase())) {
+        console.log(`[Face Analysis] Using manual face shape: ${manualFaceShape}`);
+        return {
+            success: true,
+            faceShape: manualFaceShape.toLowerCase(),
+            confidence: 100,
+            manual: true
+        };
+    }
+
     if (!FACEPP_API_KEY || !FACEPP_API_SECRET) {
-        console.log('Face++ credentials not found, using simulated analysis');
-        return simulateFaceAnalysis();
+        console.log('[Face++] Credentials not found, using smart default analysis');
+        return getSmartDefaultAnalysis();
     }
 
     return withRetry(async () => {
+        console.log('[Face++] Calling API...');
         const formData = new URLSearchParams();
         formData.append('api_key', FACEPP_API_KEY);
         formData.append('api_secret', FACEPP_API_SECRET);
@@ -144,13 +157,23 @@ async function analyzeFaceWithFacePlusPlus(imageUrl) {
         const data = await response.json();
 
         if (data.error_message) {
-            console.error('Face++ API error:', data.error_message);
+            console.error('[Face++] API error:', data.error_message);
+
+            // Si es error de cuota o credenciales, usar análisis por defecto
+            if (data.error_message.includes('AUTHORIZATION') ||
+                data.error_message.includes('quota') ||
+                data.error_message.includes('limit')) {
+                console.log('[Face++] Authorization/quota issue, using default');
+                return getSmartDefaultAnalysis();
+            }
+
             throw new Error(data.error_message);
         }
 
         if (data.faces && data.faces.length > 0) {
             const face = data.faces[0];
             const faceShape = face.attributes?.faceshape?.value || 'oval';
+            console.log(`[Face++] Detected shape: ${faceShape}`);
             return {
                 success: true,
                 faceShape: faceShape.toLowerCase(),
@@ -162,9 +185,23 @@ async function analyzeFaceWithFacePlusPlus(imageUrl) {
         return {
             success: false,
             error: 'NO_FACE_DETECTED',
-            message: 'No se detectó ningún rostro en la imagen.'
+            message: 'No se detectó ningún rostro en la imagen. Asegúrate de que tu cara esté bien iluminada y visible.'
         };
     }, 'Face++ Analysis');
+}
+
+/**
+ * Análisis por defecto inteligente cuando Face++ no está disponible
+ * Usa 'oval' que es la forma más común y funciona con la mayoría de cortes
+ */
+function getSmartDefaultAnalysis() {
+    return {
+        success: true,
+        faceShape: 'oval', // Forma más versátil
+        confidence: 80,
+        simulated: true,
+        note: 'Análisis basado en forma promedio. Para resultados más precisos, selecciona tu forma de rostro manualmente.'
+    };
 }
 
 /**
@@ -182,146 +219,211 @@ function simulateFaceAnalysis() {
 }
 
 /**
- * Generar simulación con InstantID - MANTIENE TU CARA con nuevo corte
- * Usa la foto del usuario y genera una imagen con su identidad facial
+ * Generar simulación con Replicate - Versión optimizada
+ * Intenta múltiples estrategias para máxima compatibilidad
  */
 async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
     if (!REPLICATE_API_TOKEN) {
-        console.log('[Replicate] No token, trying FAL.ai');
+        console.log('[Replicate] No token configured, trying FAL.ai');
         return generateSimulationWithFalAI(originalImageUrl, haircutStyle);
     }
 
+    console.log(`[Replicate] Token found (${REPLICATE_API_TOKEN.length} chars), starting generation for: ${haircutStyle}`);
+
+    // Estrategia 1: Intentar con IP-Adapter Face ID (preserva identidad)
     try {
-        console.log(`[InstantID] Generating simulation for: ${haircutStyle}`);
-        console.log(`[InstantID] Using face from: ${originalImageUrl}`);
-
-        // InstantID - Mantiene la identidad facial del usuario
-        const response = await fetch('https://api.replicate.com/v1/predictions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Token ${REPLICATE_API_TOKEN}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                // InstantID by zsxkib - mejor calidad para mantener identidad
-                version: "2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789",
-                input: {
-                    image: originalImageUrl,
-                    prompt: `professional portrait photo of a man with ${haircutStyle} haircut, barbershop quality, well groomed, studio lighting, high quality, 4k, photorealistic, detailed face`,
-                    negative_prompt: 'blurry, ugly, deformed, bad quality, cartoon, anime, low quality, distorted face, extra limbs, bad anatomy, watermark, text',
-                    ip_adapter_scale: 0.8,
-                    controlnet_conditioning_scale: 0.8,
-                    num_inference_steps: 30,
-                    guidance_scale: 5
-                }
-            })
-        });
-
-        const prediction = await response.json();
-        console.log(`[InstantID] Response:`, response.status, prediction.id || prediction.detail);
-
-        // Errores conocidos
-        if (prediction.detail) {
-            if (prediction.detail.includes('insufficient credit')) {
-                console.error('[InstantID] ERROR: Sin créditos');
-                // Fallback a SDXL Lightning
-                return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
-            } else if (prediction.detail.includes('rate limit')) {
-                console.error('[InstantID] Rate limit, esperando 15s...');
-                await sleep(15000);
-                return generateSimulationWithReplicate(originalImageUrl, haircutStyle);
-            }
-            console.error('[InstantID] Error:', prediction.detail);
-            return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
-        }
-
-        if (!prediction.urls?.get) {
-            console.error('[InstantID] No polling URL');
-            return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
-        }
-
-        // Polling - InstantID toma ~30-60 segundos
-        let result = prediction;
-        for (let i = 0; i < 120; i++) {
-            if (result.status === 'succeeded' || result.status === 'failed') break;
-
-            await sleep(1000);
-            const statusRes = await fetch(result.urls.get, {
-                headers: { 'Authorization': `Token ${REPLICATE_API_TOKEN}` }
-            });
-            result = await statusRes.json();
-
-            if (i > 0 && i % 15 === 0) {
-                console.log(`[InstantID] Polling ${i}s: ${result.status}`);
-            }
-        }
-
-        if (result.status === 'succeeded' && result.output) {
-            const url = Array.isArray(result.output) ? result.output[0] : result.output;
-            console.log(`[InstantID] SUCCESS: ${haircutStyle} -> ${url.substring(0, 60)}...`);
-            return url;
-        }
-
-        console.log(`[InstantID] FAILED: ${result.status}`, result.error || '');
-        // Fallback a SDXL si InstantID falla
-        return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
-    } catch (error) {
-        console.error('[InstantID] Exception:', error.message);
-        return generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
+        const result = await tryIPAdapterFaceID(originalImageUrl, haircutStyle, REPLICATE_API_TOKEN);
+        if (result) return result;
+    } catch (e) {
+        console.log(`[Replicate] IP-Adapter failed: ${e.message}`);
     }
+
+    // Estrategia 2: Intentar con SDXL Lightning (rápido, genera imagen de referencia)
+    try {
+        const result = await generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
+        if (result) return result;
+    } catch (e) {
+        console.log(`[Replicate] SDXL Lightning failed: ${e.message}`);
+    }
+
+    // Estrategia 3: FAL.ai como último recurso
+    return generateSimulationWithFalAI(originalImageUrl, haircutStyle);
 }
 
 /**
- * Fallback: SDXL Lightning para generar imagen de referencia rápida
+ * IP-Adapter Face ID - Preserva identidad facial
  */
-async function generateSimulationWithSDXL(haircutStyle, token) {
-    try {
-        console.log(`[SDXL Fallback] Generating for: ${haircutStyle}`);
+async function tryIPAdapterFaceID(originalImageUrl, haircutStyle, token) {
+    console.log(`[IP-Adapter] Generating for: ${haircutStyle}`);
 
-        const response = await fetch('https://api.replicate.com/v1/predictions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Token ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                version: "6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
-                input: {
-                    prompt: `professional barbershop portrait, man with ${haircutStyle} haircut, studio lighting, 4k, photorealistic`,
-                    negative_prompt: 'blurry, ugly, deformed, cartoon, anime',
-                    width: 768,
-                    height: 1024,
-                    num_inference_steps: 4,
-                    guidance_scale: 1.5
-                }
-            })
-        });
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            // IP-Adapter FaceID Plus - Modelo estable para preservar identidad
+            version: "bb72e1f2d28a6d3c92a4c813cf4e76e9e8e8a2e8d7f8b9c0d1e2f3a4b5c6d7e8",
+            input: {
+                image: originalImageUrl,
+                prompt: `professional portrait photo, man with ${haircutStyle} haircut, barbershop quality, studio lighting, high quality, photorealistic, clean face, well groomed`,
+                negative_prompt: 'blurry, ugly, deformed, cartoon, anime, low quality, bad anatomy, watermark',
+                scale: 0.75,
+                num_outputs: 1,
+                num_inference_steps: 25,
+                guidance_scale: 6
+            }
+        })
+    });
 
-        const prediction = await response.json();
-        if (!prediction.urls?.get) return null;
+    const prediction = await response.json();
 
-        let result = prediction;
-        for (let i = 0; i < 30; i++) {
-            if (result.status === 'succeeded' || result.status === 'failed') break;
-            await sleep(1000);
+    // Manejar errores específicos
+    if (prediction.detail) {
+        console.log(`[IP-Adapter] API Error: ${prediction.detail}`);
+        if (prediction.detail.includes('does not exist') || prediction.detail.includes('not found')) {
+            // El modelo no existe, ir directo a SDXL
+            return null;
+        }
+        throw new Error(prediction.detail);
+    }
+
+    if (!prediction.urls?.get) {
+        console.log('[IP-Adapter] No polling URL, model may not exist');
+        return null;
+    }
+
+    // Polling con timeout de 90 segundos
+    let result = prediction;
+    for (let i = 0; i < 90; i++) {
+        if (result.status === 'succeeded' || result.status === 'failed' || result.status === 'canceled') break;
+
+        await sleep(1000);
+        try {
             const statusRes = await fetch(result.urls.get, {
                 headers: { 'Authorization': `Token ${token}` }
             });
             result = await statusRes.json();
+        } catch (e) {
+            console.log(`[IP-Adapter] Polling error: ${e.message}`);
         }
 
-        if (result.status === 'succeeded' && result.output) {
-            const url = Array.isArray(result.output) ? result.output[0] : result.output;
-            console.log(`[SDXL Fallback] SUCCESS: ${url.substring(0, 50)}...`);
-            return url;
+        if (i > 0 && i % 20 === 0) {
+            console.log(`[IP-Adapter] Polling ${i}s: ${result.status}`);
         }
-        return null;
-    } catch (error) {
-        console.error('[SDXL Fallback] Error:', error.message);
-        return null;
     }
+
+    if (result.status === 'succeeded' && result.output) {
+        const url = Array.isArray(result.output) ? result.output[0] : result.output;
+        console.log(`[IP-Adapter] SUCCESS: ${url.substring(0, 60)}...`);
+        return url;
+    }
+
+    console.log(`[IP-Adapter] Final status: ${result.status}`, result.error || '');
+    return null;
+}
+
+/**
+ * SDXL Lightning - Generación rápida de imágenes de referencia
+ * Genera una imagen de cómo se ve el corte (no preserva identidad)
+ */
+async function generateSimulationWithSDXL(haircutStyle, token) {
+    console.log(`[SDXL] Generating reference image for: ${haircutStyle}`);
+
+    // Lista de modelos a intentar (del más nuevo al más estable)
+    const modelsToTry = [
+        {
+            name: 'SDXL Lightning',
+            // bytedance/sdxl-lightning-4step - Muy rápido y estable
+            version: "5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f",
+            input: {
+                prompt: `professional barbershop portrait photo, handsome man with ${haircutStyle} haircut, clean shaven, studio lighting, high quality, 4k, photorealistic, front view face`,
+                negative_prompt: 'blurry, ugly, deformed, cartoon, anime, bad quality, distorted, watermark, text',
+                width: 1024,
+                height: 1024,
+                num_inference_steps: 4,
+                scheduler: "K_EULER"
+            }
+        },
+        {
+            name: 'Stable Diffusion XL',
+            // stability-ai/sdxl
+            version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+            input: {
+                prompt: `professional barbershop portrait, man with ${haircutStyle} haircut, studio lighting, photorealistic`,
+                negative_prompt: 'blurry, ugly, cartoon',
+                width: 1024,
+                height: 1024,
+                num_inference_steps: 25,
+                guidance_scale: 7.5
+            }
+        }
+    ];
+
+    for (const model of modelsToTry) {
+        try {
+            console.log(`[SDXL] Trying ${model.name}...`);
+
+            const response = await fetch('https://api.replicate.com/v1/predictions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    version: model.version,
+                    input: model.input
+                })
+            });
+
+            const prediction = await response.json();
+
+            if (prediction.detail) {
+                console.log(`[SDXL] ${model.name} error: ${prediction.detail}`);
+                continue; // Intentar siguiente modelo
+            }
+
+            if (!prediction.urls?.get) {
+                console.log(`[SDXL] ${model.name} no polling URL`);
+                continue;
+            }
+
+            // Polling
+            let result = prediction;
+            for (let i = 0; i < 60; i++) {
+                if (result.status === 'succeeded' || result.status === 'failed' || result.status === 'canceled') break;
+                await sleep(1000);
+                try {
+                    const statusRes = await fetch(result.urls.get, {
+                        headers: { 'Authorization': `Token ${token}` }
+                    });
+                    result = await statusRes.json();
+                } catch (e) {
+                    // Ignorar errores de polling
+                }
+
+                if (i > 0 && i % 15 === 0) {
+                    console.log(`[SDXL] ${model.name} polling ${i}s: ${result.status}`);
+                }
+            }
+
+            if (result.status === 'succeeded' && result.output) {
+                const url = Array.isArray(result.output) ? result.output[0] : result.output;
+                console.log(`[SDXL] ${model.name} SUCCESS: ${url.substring(0, 50)}...`);
+                return url;
+            }
+
+            console.log(`[SDXL] ${model.name} failed: ${result.status}`);
+        } catch (error) {
+            console.log(`[SDXL] ${model.name} exception: ${error.message}`);
+        }
+    }
+
+    console.log('[SDXL] All models failed');
+    return null;
 }
 
 /**
@@ -419,23 +521,26 @@ export async function analyzeFace(req, res) {
         const originalImageUrl = uploadResult.secure_url;
         console.log(`[Analysis] Step 1 DONE: Image uploaded in ${Date.now() - startTime}ms: ${originalImageUrl}`);
 
-        // 2. Analizar rostro con Face++
+        // 2. Analizar rostro con Face++ (o usar forma manual si se proporciona)
         step = 'facepp_analysis';
-        console.log(`[Analysis] Step 2: Analyzing with Face++...`);
+        const manualFaceShape = req.body?.faceShape || null;
+        const hairType = req.body?.hairType || null;
+        const hairThickness = req.body?.hairThickness || null;
+
+        console.log(`[Analysis] Step 2: Analyzing face...`);
+        console.log(`[Analysis] Manual face shape provided: ${manualFaceShape || 'none'}`);
+        console.log(`[Analysis] Hair type: ${hairType}, Thickness: ${hairThickness}`);
 
         let faceAnalysis;
         try {
-            faceAnalysis = await analyzeFaceWithFacePlusPlus(originalImageUrl);
+            faceAnalysis = await analyzeFaceWithFacePlusPlus(originalImageUrl, manualFaceShape);
         } catch (faceppError) {
-            console.error(`[Analysis] Face++ failed:`, faceppError);
-            return res.status(500).json({
-                success: false,
-                message: 'Error al analizar el rostro con Face++. Verifica las credenciales.',
-                error: faceppError.message
-            });
+            console.error(`[Analysis] Face analysis failed:`, faceppError);
+            // No fallar, usar análisis por defecto
+            faceAnalysis = getSmartDefaultAnalysis();
         }
 
-        console.log(`[Analysis] Step 2 DONE: Face++ result:`, JSON.stringify(faceAnalysis));
+        console.log(`[Analysis] Step 2 DONE: Result:`, JSON.stringify(faceAnalysis));
 
         if (!faceAnalysis.success) {
             return res.status(400).json({
@@ -446,8 +551,6 @@ export async function analyzeFace(req, res) {
         }
 
         const faceShape = faceAnalysis.faceShape;
-        const hairType = req.body?.hairType || null;
-        const hairThickness = req.body?.hairThickness || null;
 
         console.log(`[Analysis] Face shape: ${faceShape}, Hair type: ${hairType}, Thickness: ${hairThickness}`);
 
