@@ -149,7 +149,7 @@ async function analyzeFaceWithFacePlusPlus(imageUrl, manualFaceShape = null) {
         formData.append('image_url', imageUrl);
         formData.append('return_attributes', 'faceshape');
 
-        const response = await fetch('https://api-us.faceplusplus.com/facepp/v3/detect', {
+        const response = await fetch('https://api-cn.faceplusplus.com/facepp/v3/detect', {
             method: 'POST',
             body: formData
         });
@@ -253,7 +253,7 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
 }
 
 /**
- * IP-Adapter Face ID - Preserva identidad facial
+ * IP-Adapter Face ID - Preserva identidad facial usando PhotoMaker
  */
 async function tryIPAdapterFaceID(originalImageUrl, haircutStyle, token) {
     console.log(`[IP-Adapter] Generating for: ${haircutStyle}`);
@@ -262,45 +262,51 @@ async function tryIPAdapterFaceID(originalImageUrl, haircutStyle, token) {
         method: 'POST',
         headers: {
             'Authorization': `Token ${token}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Prefer': 'wait'
         },
         body: JSON.stringify({
-            // IP-Adapter FaceID Plus - Modelo estable para preservar identidad
-            version: "bb72e1f2d28a6d3c92a4c813cf4e76e9e8e8a2e8d7f8b9c0d1e2f3a4b5c6d7e8",
+            // tencentarc/photomaker - modelo estable para retratos con estilo
+            version: "ddfc2b08d209f9fa8c1eca692712918bd449f695dabb4a958da31802a9570fe4",
             input: {
-                image: originalImageUrl,
-                prompt: `professional portrait photo, man with ${haircutStyle} haircut, barbershop quality, studio lighting, high quality, photorealistic, clean face, well groomed`,
-                negative_prompt: 'blurry, ugly, deformed, cartoon, anime, low quality, bad anatomy, watermark',
-                scale: 0.75,
+                input_image: originalImageUrl,
+                style_name: "Photographic (Default)",
+                prompt: `img, professional portrait photo, man with ${haircutStyle} haircut, barbershop quality, studio lighting, high quality, photorealistic`,
+                negative_prompt: "blurry, ugly, deformed, cartoon, anime, low quality, bad anatomy, watermark",
+                num_steps: 20,
+                style_strength_ratio: 20,
                 num_outputs: 1,
-                num_inference_steps: 25,
-                guidance_scale: 6
+                guidance_scale: 5
             }
         })
     });
 
     const prediction = await response.json();
 
-    // Manejar errores específicos
     if (prediction.detail) {
         console.log(`[IP-Adapter] API Error: ${prediction.detail}`);
         if (prediction.detail.includes('does not exist') || prediction.detail.includes('not found')) {
-            // El modelo no existe, ir directo a SDXL
             return null;
         }
         throw new Error(prediction.detail);
     }
 
+    // Si usó Prefer: wait, puede venir directo el resultado
+    if (prediction.status === 'succeeded' && prediction.output) {
+        const url = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+        console.log(`[IP-Adapter] SUCCESS (direct): ${url.substring(0, 60)}...`);
+        return url;
+    }
+
     if (!prediction.urls?.get) {
-        console.log('[IP-Adapter] No polling URL, model may not exist');
+        console.log('[IP-Adapter] No polling URL');
         return null;
     }
 
-    // Polling con timeout de 90 segundos
+    // Polling
     let result = prediction;
     for (let i = 0; i < 90; i++) {
         if (result.status === 'succeeded' || result.status === 'failed' || result.status === 'canceled') break;
-
         await sleep(1000);
         try {
             const statusRes = await fetch(result.urls.get, {
@@ -310,10 +316,7 @@ async function tryIPAdapterFaceID(originalImageUrl, haircutStyle, token) {
         } catch (e) {
             console.log(`[IP-Adapter] Polling error: ${e.message}`);
         }
-
-        if (i > 0 && i % 20 === 0) {
-            console.log(`[IP-Adapter] Polling ${i}s: ${result.status}`);
-        }
+        if (i > 0 && i % 20 === 0) console.log(`[IP-Adapter] Polling ${i}s: ${result.status}`);
     }
 
     if (result.status === 'succeeded' && result.output) {
@@ -337,8 +340,8 @@ async function generateSimulationWithSDXL(haircutStyle, token) {
     const modelsToTry = [
         {
             name: 'SDXL Lightning',
-            // bytedance/sdxl-lightning-4step - Muy rápido y estable
-            version: "5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f",
+            // bytedance/sdxl-lightning-4step - versión actual verificada
+            version: "727e49a643e999d602a896c774a0658ffefea21465756a6ce24b7ea4165fffcd",
             input: {
                 prompt: `professional barbershop portrait photo, handsome man with ${haircutStyle} haircut, clean shaven, studio lighting, high quality, 4k, photorealistic, front view face`,
                 negative_prompt: 'blurry, ugly, deformed, cartoon, anime, bad quality, distorted, watermark, text',
@@ -350,8 +353,8 @@ async function generateSimulationWithSDXL(haircutStyle, token) {
         },
         {
             name: 'Stable Diffusion XL',
-            // stability-ai/sdxl
-            version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+            // stability-ai/sdxl - versión actual verificada
+            version: "7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
             input: {
                 prompt: `professional barbershop portrait, man with ${haircutStyle} haircut, studio lighting, photorealistic`,
                 negative_prompt: 'blurry, ugly, cartoon',
