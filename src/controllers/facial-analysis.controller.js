@@ -38,11 +38,23 @@ const HAIR_TYPE_ADJUSTMENTS = {
     'coily': {
         preferred: ['Afro', 'High Top Fade', 'Taper', 'Twist Out', 'Freeform'],
         avoid: ['Pompadour', 'Side Part tradicional']
+    },
+    'bald': {
+        preferred: ['Buzz Cut', 'Skin Fade', 'Clean Shave', 'Zero Fade'],
+        avoid: ['Pompadour', 'Quiff', 'Medium Length', 'Layered']
+    },
+    'gray': {
+        preferred: ['Fade Clásico', 'Side Part', 'Crew Cut', 'Textured Crop', 'Distinguished'],
+        avoid: []
     }
 };
 
 // Ajustes según grosor del cabello
 const HAIR_THICKNESS_ADJUSTMENTS = {
+    'very_thin': {
+        preferred: ['Buzz Cut', 'Textured', 'Layered', 'Crew Cut'],
+        avoid: ['Pompadour', 'Quiff', 'Slick Back', 'Undercut largo']
+    },
     'thin': {
         preferred: ['Textured', 'Layered', 'Messy', 'Fringe'],
         avoid: ['Undercut largo', 'Slick Back']
@@ -54,6 +66,26 @@ const HAIR_THICKNESS_ADJUSTMENTS = {
     'thick': {
         preferred: ['Fade', 'Taper', 'Undercut', 'Textured Crop'],
         avoid: []
+    }
+};
+
+// Ajustes según tipo de barba
+const BEARD_TYPE_ADJUSTMENTS = {
+    'none': {
+        preferred: [],
+        avoid: []
+    },
+    'short': {
+        preferred: ['Fade', 'Undercut', 'Textured Crop'],
+        complementNote: 'Combina bien con barba de 3 días'
+    },
+    'medium': {
+        preferred: ['Fade', 'Side Part', 'Slick Back', 'Pompadour'],
+        complementNote: 'Equilibra con barba definida'
+    },
+    'long': {
+        preferred: ['Undercut', 'Man Bun', 'Slick Back', 'Classic'],
+        complementNote: 'Estilo más completo con barba larga'
     }
 };
 
@@ -89,11 +121,12 @@ async function withRetry(fn, context = 'Operation') {
 }
 
 /**
- * Obtener recomendaciones ajustadas por tipo de cabello
+ * Obtener recomendaciones ajustadas por tipo de cabello, grosor y barba
  */
-function getAdjustedRecommendations(faceShape, hairType, hairThickness) {
+function getAdjustedRecommendations(faceShape, hairType, hairThickness, beardType) {
     let recommendations = [...(FACE_SHAPE_RECOMMENDATIONS[faceShape] || FACE_SHAPE_RECOMMENDATIONS['oval'])];
 
+    // Ajustar por tipo de cabello
     if (hairType && HAIR_TYPE_ADJUSTMENTS[hairType]) {
         const hairAdjust = HAIR_TYPE_ADJUSTMENTS[hairType];
         recommendations = recommendations.filter(cut => {
@@ -106,12 +139,27 @@ function getAdjustedRecommendations(faceShape, hairType, hairThickness) {
         }
     }
 
+    // Ajustar por grosor
     if (hairThickness && HAIR_THICKNESS_ADJUSTMENTS[hairThickness]) {
         const thickAdjust = HAIR_THICKNESS_ADJUSTMENTS[hairThickness];
         recommendations = recommendations.filter(cut => {
             const cutLower = cut.toLowerCase();
             return !thickAdjust.avoid.some(avoid => cutLower.includes(avoid.toLowerCase()));
         });
+    }
+
+    // Ajustar por barba - dar prioridad a estilos que complementan
+    if (beardType && BEARD_TYPE_ADJUSTMENTS[beardType]) {
+        const beardAdjust = BEARD_TYPE_ADJUSTMENTS[beardType];
+        if (beardAdjust.preferred && beardAdjust.preferred.length > 0) {
+            // Añadir preferencias de barba si hay espacio
+            const beardPreferred = beardAdjust.preferred.filter(p =>
+                !recommendations.some(r => r.toLowerCase().includes(p.toLowerCase()))
+            );
+            if (recommendations.length < 3 && beardPreferred.length > 0) {
+                recommendations = [...recommendations, ...beardPreferred.slice(0, 3 - recommendations.length)];
+            }
+        }
     }
 
     return recommendations.slice(0, 3);
@@ -529,10 +577,11 @@ export async function analyzeFace(req, res) {
         const manualFaceShape = req.body?.faceShape || null;
         const hairType = req.body?.hairType || null;
         const hairThickness = req.body?.hairThickness || null;
+        const beardType = req.body?.beardType || null;
 
         console.log(`[Analysis] Step 2: Analyzing face...`);
         console.log(`[Analysis] Manual face shape provided: ${manualFaceShape || 'none'}`);
-        console.log(`[Analysis] Hair type: ${hairType}, Thickness: ${hairThickness}`);
+        console.log(`[Analysis] Hair type: ${hairType}, Thickness: ${hairThickness}, Beard: ${beardType}`);
 
         let faceAnalysis;
         try {
@@ -555,11 +604,11 @@ export async function analyzeFace(req, res) {
 
         const faceShape = faceAnalysis.faceShape;
 
-        console.log(`[Analysis] Face shape: ${faceShape}, Hair type: ${hairType}, Thickness: ${hairThickness}`);
+        console.log(`[Analysis] Face shape: ${faceShape}, Hair type: ${hairType}, Thickness: ${hairThickness}, Beard: ${beardType}`);
 
         // 3. Obtener recomendaciones ajustadas
         step = 'recommendations';
-        const recommendedStyles = getAdjustedRecommendations(faceShape, hairType, hairThickness);
+        const recommendedStyles = getAdjustedRecommendations(faceShape, hairType, hairThickness, beardType);
         console.log(`[Analysis] Recommended styles: ${recommendedStyles.join(', ')}`);
 
         // 4. Buscar cortes del catálogo
