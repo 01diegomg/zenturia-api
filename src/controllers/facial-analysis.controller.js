@@ -190,12 +190,13 @@ async function analyzeFaceWithFacePlusPlus(imageUrl, manualFaceShape = null) {
     }
 
     return withRetry(async () => {
-        console.log('[Face++] Calling API...');
+        console.log('[Face++] Calling API with enhanced attributes...');
         const formData = new URLSearchParams();
         formData.append('api_key', FACEPP_API_KEY);
         formData.append('api_secret', FACEPP_API_SECRET);
         formData.append('image_url', imageUrl);
-        formData.append('return_attributes', 'faceshape');
+        // Atributos mejorados para mayor precisión
+        formData.append('return_attributes', 'faceshape,age,gender,headpose,blur,eyestatus,facequality');
 
         const response = await fetch('https://api-cn.faceplusplus.com/facepp/v3/detect', {
             method: 'POST',
@@ -220,20 +221,84 @@ async function analyzeFaceWithFacePlusPlus(imageUrl, manualFaceShape = null) {
 
         if (data.faces && data.faces.length > 0) {
             const face = data.faces[0];
-            const faceShape = face.attributes?.faceshape?.value || 'oval';
-            console.log(`[Face++] Detected shape: ${faceShape}`);
+            const attrs = face.attributes || {};
+
+            // Verificar calidad de imagen
+            const blur = attrs.blur?.blurness?.value || 0;
+            const faceQuality = attrs.facequality?.value || 100;
+
+            if (blur > 50) {
+                console.log(`[Face++] Image too blurry: ${blur}`);
+                return {
+                    success: false,
+                    error: 'IMAGE_BLURRY',
+                    message: 'La imagen está borrosa. Por favor toma otra foto con mejor enfoque.'
+                };
+            }
+
+            if (faceQuality < 30) {
+                console.log(`[Face++] Face quality too low: ${faceQuality}`);
+                return {
+                    success: false,
+                    error: 'LOW_QUALITY',
+                    message: 'La calidad de la imagen es baja. Asegúrate de tener buena iluminación.'
+                };
+            }
+
+            // Verificar que esté mirando de frente
+            const headpose = attrs.headpose || {};
+            const yawAngle = Math.abs(headpose.yaw_angle || 0);
+            const pitchAngle = Math.abs(headpose.pitch_angle || 0);
+
+            if (yawAngle > 25 || pitchAngle > 20) {
+                console.log(`[Face++] Head not straight: yaw=${yawAngle}, pitch=${pitchAngle}`);
+                return {
+                    success: false,
+                    error: 'HEAD_NOT_STRAIGHT',
+                    message: 'Por favor mira directamente a la cámara, sin girar la cabeza.'
+                };
+            }
+
+            // Verificar ojos abiertos
+            const leftEye = attrs.eyestatus?.left_eye_status || {};
+            const rightEye = attrs.eyestatus?.right_eye_status || {};
+            const eyesClosed = (leftEye.no_glass_eye_close > 50 || rightEye.no_glass_eye_close > 50);
+
+            if (eyesClosed) {
+                console.log('[Face++] Eyes appear closed');
+                return {
+                    success: false,
+                    error: 'EYES_CLOSED',
+                    message: 'Parece que tienes los ojos cerrados. Abre los ojos y toma otra foto.'
+                };
+            }
+
+            const faceShape = attrs.faceshape?.value || 'oval';
+            const confidence = attrs.faceshape?.confidence || 85;
+            const age = attrs.age?.value || null;
+            const gender = attrs.gender?.value || null;
+
+            console.log(`[Face++] Analysis complete - Shape: ${faceShape}, Confidence: ${confidence}%, Age: ${age}, Gender: ${gender}`);
+
             return {
                 success: true,
                 faceShape: faceShape.toLowerCase(),
-                confidence: face.attributes?.faceshape?.confidence || 85,
-                faceRectangle: face.face_rectangle
+                confidence: confidence,
+                faceRectangle: face.face_rectangle,
+                // Datos adicionales para mejores recomendaciones
+                additionalData: {
+                    age,
+                    gender,
+                    faceQuality,
+                    headpose
+                }
             };
         }
 
         return {
             success: false,
             error: 'NO_FACE_DETECTED',
-            message: 'No se detectó ningún rostro en la imagen. Asegúrate de que tu cara esté bien iluminada y visible.'
+            message: 'No se detectó ningún rostro en la imagen. Asegúrate de que tu cara esté bien iluminada y centrada en el marco.'
         };
     }, 'Face++ Analysis');
 }
