@@ -239,16 +239,15 @@ async function analyzeFaceWithFacePlusPlus(imageUrl, manualFaceShape = null) {
 }
 
 /**
- * Análisis por defecto inteligente cuando Face++ no está disponible
- * Usa 'oval' que es la forma más común y funciona con la mayoría de cortes
+ * Análisis por defecto - REQUIERE que el usuario seleccione forma manual
+ * Ya no acepta cualquier imagen sin validación
  */
 function getSmartDefaultAnalysis() {
     return {
-        success: true,
-        faceShape: 'oval', // Forma más versátil
-        confidence: 80,
-        simulated: true,
-        note: 'Análisis basado en forma promedio. Para resultados más precisos, selecciona tu forma de rostro manualmente.'
+        success: false,
+        error: 'FACE_API_NOT_CONFIGURED',
+        message: 'El servicio de detección facial no está disponible. Por favor selecciona tu forma de rostro manualmente en la app.',
+        requireManualSelection: true
     };
 }
 
