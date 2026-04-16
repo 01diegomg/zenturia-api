@@ -151,9 +151,10 @@ export async function loginAdmin(req, res) {
             });
         }
 
-        // Validar código secreto de administrador
+        // Validar código secreto de administrador (solo requerido desde la app móvil)
+        // Si se envía adminCode, debe ser válido. Si no se envía, se permite (login desde web)
         const ADMIN_SECRET_CODE = process.env.ADMIN_SECRET_CODE;
-        if (!adminCode || adminCode !== ADMIN_SECRET_CODE) {
+        if (adminCode && ADMIN_SECRET_CODE && adminCode !== ADMIN_SECRET_CODE) {
             return res.status(401).json({
                 success: false,
                 message: 'Código de administrador inválido.'

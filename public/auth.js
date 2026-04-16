@@ -490,11 +490,11 @@ export async function handleClientRegister() {
  * @param {string} user - Admin email
  * @param {string} pass - Admin password
  */
-export async function handleAdminLogin(user, pass) {
+export async function handleAdminLogin(email, password) {
     const btn = ui.adminLoginBtn;
 
     // Validación de campos vacíos
-    if (!user || !pass) {
+    if (!email || !password) {
         ui.showToast("Por favor, ingresa usuario y contraseña.", "warning");
         return;
     }
@@ -505,7 +505,7 @@ export async function handleAdminLogin(user, pass) {
         const response = await fetch(`${API_BASE_URL}/login/admin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user, pass }),
+            body: JSON.stringify({ email, password }),
         });
         const data = await response.json();
 
