@@ -457,29 +457,30 @@ async function generateSimulationWithSDXL(haircutStyle, token) {
     // Lista de modelos a intentar (del más nuevo al más estable)
     const modelsToTry = [
         {
-            name: 'SDXL Lightning',
-            // bytedance/sdxl-lightning-4step - versión actual verificada
-            version: "727e49a643e999d602a896c774a0658ffefea21465756a6ce24b7ea4165fffcd",
+            name: 'Stable Diffusion XL (High Quality)',
+            // stability-ai/sdxl - versión de alta calidad con 30 pasos
+            version: "7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
             input: {
-                prompt: `professional barbershop portrait photo, handsome man with ${haircutStyle} haircut, clean shaven, studio lighting, high quality, 4k, photorealistic, front view face`,
-                negative_prompt: 'blurry, ugly, deformed, cartoon, anime, bad quality, distorted, watermark, text',
+                prompt: `ultra realistic professional barbershop portrait photo, handsome latino man with ${haircutStyle} haircut, perfectly styled hair, clean fresh haircut, professional studio lighting, sharp details, high quality, 8k, photorealistic, front view face, magazine quality photo`,
+                negative_prompt: 'blurry, ugly, deformed, cartoon, anime, bad quality, distorted, watermark, text, low resolution, grainy, bad hair, messy hair',
                 width: 1024,
                 height: 1024,
-                num_inference_steps: 4,
+                num_inference_steps: 30,
+                guidance_scale: 7.5,
                 scheduler: "K_EULER"
             }
         },
         {
-            name: 'Stable Diffusion XL',
-            // stability-ai/sdxl - versión actual verificada
-            version: "7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
+            name: 'SDXL Lightning (Backup)',
+            // bytedance/sdxl-lightning-4step - respaldo rápido
+            version: "727e49a643e999d602a896c774a0658ffefea21465756a6ce24b7ea4165fffcd",
             input: {
-                prompt: `professional barbershop portrait, man with ${haircutStyle} haircut, studio lighting, photorealistic`,
-                negative_prompt: 'blurry, ugly, cartoon',
+                prompt: `professional barbershop portrait photo, man with ${haircutStyle} haircut, studio lighting, high quality, photorealistic`,
+                negative_prompt: 'blurry, ugly, deformed, cartoon, anime, bad quality',
                 width: 1024,
                 height: 1024,
-                num_inference_steps: 25,
-                guidance_scale: 7.5
+                num_inference_steps: 4,
+                scheduler: "K_EULER"
             }
         }
     ];
