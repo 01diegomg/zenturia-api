@@ -1104,9 +1104,24 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="barber-editor-photo">URL de Foto</label>
-                    <input type="url" id="barber-editor-photo" class="portal-input" placeholder="https://ejemplo.com/foto.jpg">
-                    <p class="text-xs text-gray-500 mt-1">Deja vacío para usar avatar por defecto</p>
+                    <label for="barber-editor-photo-file">Foto del Barbero</label>
+                    <div class="barber-photo-upload-container">
+                        <div id="barber-photo-preview" class="barber-photo-preview">
+                            <span class="material-icons">person</span>
+                        </div>
+                        <div class="barber-photo-actions">
+                            <label for="barber-editor-photo-file" class="btn-secondary cursor-pointer inline-flex items-center gap-2">
+                                <span class="material-icons text-sm">upload</span>
+                                Subir foto
+                            </label>
+                            <input type="file" id="barber-editor-photo-file" accept="image/*" class="hidden">
+                            <button type="button" id="barber-photo-remove" class="btn-danger-outline hidden">
+                                <span class="material-icons text-sm">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="barber-editor-photo">
+                    <p class="text-xs text-gray-500 mt-1">Formatos: JPG, PNG. Máximo 5MB</p>
                 </div>
 
                 <div class="form-group">

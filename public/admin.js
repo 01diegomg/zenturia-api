@@ -6,6 +6,7 @@ import { state } from './main.js';
 import { API_BASE_URL, fetchWithRetry, handleResponseError, ERROR_MESSAGES } from './config.js';
 import * as client from './client.js';
 import { escapeHtml, sanitizeUrl } from './js/sanitizer.js';
+import { authFetch } from './auth.js';
 
 // === TEMAS PREDEFINIDOS PARA LA PALETA DE COLORES ===
 const THEME_PRESETS = {
@@ -2230,6 +2231,9 @@ function openBarberEditor(barber = null) {
     const idInput = document.getElementById('barber-editor-id');
     const nameInput = document.getElementById('barber-editor-name');
     const photoInput = document.getElementById('barber-editor-photo');
+    const photoFileInput = document.getElementById('barber-editor-photo-file');
+    const photoPreview = document.getElementById('barber-photo-preview');
+    const photoRemoveBtn = document.getElementById('barber-photo-remove');
     const activeInput = document.getElementById('barber-editor-active');
     const specialtiesContainer = document.getElementById('barber-specialties-checkboxes');
 
@@ -2243,6 +2247,12 @@ function openBarberEditor(barber = null) {
     nameInput.value = barber?.name || '';
     photoInput.value = barber?.photo || '';
     activeInput.checked = barber?.isActive !== false;
+
+    // Limpiar file input
+    if (photoFileInput) photoFileInput.value = '';
+
+    // Actualizar preview de foto
+    updateBarberPhotoPreview(barber?.photo || '');
 
     // Cargar checkboxes de servicios
     const barberSpecialties = barber ? JSON.parse(barber.specialties || '[]') : [];
@@ -2258,6 +2268,72 @@ function openBarberEditor(barber = null) {
     `).join('');
 
     modal.classList.remove('hidden');
+}
+
+/**
+ * Actualiza el preview de la foto del barbero
+ */
+function updateBarberPhotoPreview(photoUrl) {
+    const preview = document.getElementById('barber-photo-preview');
+    const removeBtn = document.getElementById('barber-photo-remove');
+
+    if (!preview) return;
+
+    if (photoUrl) {
+        preview.innerHTML = `<img src="${escapeHtml(photoUrl)}" alt="Preview">`;
+        preview.classList.add('has-image');
+        if (removeBtn) removeBtn.classList.remove('hidden');
+    } else {
+        preview.innerHTML = '<span class="material-icons">person</span>';
+        preview.classList.remove('has-image');
+        if (removeBtn) removeBtn.classList.add('hidden');
+    }
+}
+
+/**
+ * Maneja la subida de foto del barbero
+ */
+async function handleBarberPhotoUpload(file) {
+    if (!file) return null;
+
+    // Validar tamaño (máx 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        ui.showToast('La imagen no debe superar 5MB', 'error');
+        return null;
+    }
+
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+        ui.showToast('Solo se permiten archivos de imagen', 'error');
+        return null;
+    }
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        ui.showToast('Subiendo imagen...', 'info');
+
+        const response = await fetch(`${API_BASE_URL}/upload`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${sessionStorage.getItem('barber_accessToken')}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al subir imagen');
+        }
+
+        const data = await response.json();
+        ui.showToast('Imagen subida correctamente');
+        return data.url;
+    } catch (error) {
+        console.error('Error al subir imagen:', error);
+        ui.showToast('Error al subir la imagen', 'error');
+        return null;
+    }
 }
 
 /**
@@ -2430,6 +2506,33 @@ export function setupBarbersEventListeners() {
     // Botón agregar barbero
     document.getElementById('add-barber-btn')?.addEventListener('click', () => {
         openBarberEditor(null);
+    });
+
+    // Input de archivo para foto
+    document.getElementById('barber-editor-photo-file')?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Mostrar preview local inmediatamente
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            updateBarberPhotoPreview(event.target.result);
+        };
+        reader.readAsDataURL(file);
+
+        // Subir a Cloudinary
+        const uploadedUrl = await handleBarberPhotoUpload(file);
+        if (uploadedUrl) {
+            document.getElementById('barber-editor-photo').value = uploadedUrl;
+            updateBarberPhotoPreview(uploadedUrl);
+        }
+    });
+
+    // Botón remover foto
+    document.getElementById('barber-photo-remove')?.addEventListener('click', () => {
+        document.getElementById('barber-editor-photo').value = '';
+        document.getElementById('barber-editor-photo-file').value = '';
+        updateBarberPhotoPreview('');
     });
 
     // Formulario de barbero
