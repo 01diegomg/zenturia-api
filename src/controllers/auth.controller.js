@@ -9,7 +9,7 @@ import * as authService from '../services/auth.service.js';
  */
 export async function registerClient(req, res) {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, phone, password } = req.body;
 
         if (!name || !email || !password) {
             return res.status(400).json({
@@ -49,7 +49,12 @@ export async function registerClient(req, res) {
 
         // Create user
         const newUser = await prisma.user.create({
-            data: { name, email, password: hashedPassword }
+            data: {
+                name,
+                email,
+                phone: phone || null,
+                password: hashedPassword
+            }
         });
 
         // Generate tokens
@@ -137,12 +142,21 @@ export async function loginClient(req, res) {
  */
 export async function loginAdmin(req, res) {
     try {
-        const { user: email, pass: password } = req.body;
+        const { email, password, adminCode } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
                 message: 'Usuario y contraseña son requeridos.'
+            });
+        }
+
+        // Validar código secreto de administrador
+        const ADMIN_SECRET_CODE = process.env.ADMIN_SECRET_CODE;
+        if (!adminCode || adminCode !== ADMIN_SECRET_CODE) {
+            return res.status(401).json({
+                success: false,
+                message: 'Código de administrador inválido.'
             });
         }
 

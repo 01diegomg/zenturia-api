@@ -783,14 +783,16 @@ export async function analyzeFace(req, res) {
 }
 
 /**
- * POST /facial-analysis/:id/simulate - Generar simulaciones en PARALELO
+ * POST /facial-analysis/:id/simulate - Generar simulacion para corte seleccionado
+ * @body {number} haircutIndex - Indice del corte a simular (0, 1, o 2). Si no se proporciona, genera todos.
  */
 export async function generateSimulations(req, res) {
     try {
         const { id } = req.params;
         const userId = req.user.userId;
+        const { haircutIndex } = req.body || {};
 
-        console.log(`[Simulations] Starting for analysis ${id}`);
+        console.log(`[Simulations] Starting for analysis ${id}, haircutIndex: ${haircutIndex}`);
 
         // Verificar servicios de IA con logging detallado
         const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
@@ -823,9 +825,94 @@ export async function generateSimulations(req, res) {
             });
         }
 
-        // Verificar simulaciones existentes
+        const recommendations = JSON.parse(analysis.recommendations);
+
+        // Si se especifica haircutIndex, solo generar para ese corte
+        if (haircutIndex !== undefined && haircutIndex !== null) {
+            const index = parseInt(haircutIndex);
+
+            if (index < 0 || index >= recommendations.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Índice de corte inválido.'
+                });
+            }
+
+            // Verificar si ya existe simulacion para este corte
+            const existingSimField = index === 0 ? analysis.simulation1 :
+                                      index === 1 ? analysis.simulation2 :
+                                      analysis.simulation3;
+
+            if (existingSimField) {
+                console.log(`[Simulations] Returning existing simulation for index ${index}`);
+                return res.status(200).json({
+                    success: true,
+                    simulations: [{
+                        haircutId: recommendations[index].id,
+                        haircutName: recommendations[index].name,
+                        simulationUrl: existingSimField
+                    }],
+                    message: 'Simulación recuperada del análisis previo.'
+                });
+            }
+
+            // Generar simulacion solo para el corte seleccionado
+            const haircut = recommendations[index];
+            console.log(`[Simulations] Generating single simulation for: ${haircut.name}`);
+
+            try {
+                const simulationUrl = await generateSimulationWithReplicate(
+                    analysis.originalImage,
+                    haircut.name
+                );
+
+                if (simulationUrl) {
+                    // Subir a Cloudinary para persistencia
+                    const uploadResult = await cloudinary.uploader.upload(simulationUrl, {
+                        folder: 'barberia/simulations',
+                        transformation: [{ quality: 'auto:good' }]
+                    });
+
+                    // Actualizar el campo correspondiente
+                    const updateData = {};
+                    if (index === 0) updateData.simulation1 = uploadResult.secure_url;
+                    if (index === 1) updateData.simulation2 = uploadResult.secure_url;
+                    if (index === 2) updateData.simulation3 = uploadResult.secure_url;
+
+                    await prisma.facialAnalysis.update({
+                        where: { id },
+                        data: updateData
+                    });
+
+                    console.log(`[Simulations] Successfully generated simulation for: ${haircut.name}`);
+
+                    return res.status(200).json({
+                        success: true,
+                        simulations: [{
+                            haircutId: haircut.id,
+                            haircutName: haircut.name,
+                            simulationUrl: uploadResult.secure_url
+                        }]
+                    });
+                } else {
+                    return res.status(200).json({
+                        success: true,
+                        simulations: [],
+                        message: 'No se pudo generar la simulación. El servicio de IA no está disponible.'
+                    });
+                }
+            } catch (error) {
+                console.error(`[Simulations] Error generating for ${haircut.name}:`, error.message);
+                return res.status(200).json({
+                    success: true,
+                    simulations: [],
+                    message: 'Error al generar la simulación. Por favor intenta de nuevo.'
+                });
+            }
+        }
+
+        // Si no se especifica haircutIndex, verificar simulaciones existentes o generar todas
         if (analysis.simulation1 || analysis.simulation2 || analysis.simulation3) {
-            const recommendations = JSON.parse(analysis.recommendations);
             const existingSimulations = [];
 
             if (analysis.simulation1 && recommendations[0]) {
@@ -860,9 +947,7 @@ export async function generateSimulations(req, res) {
             }
         }
 
-        const recommendations = JSON.parse(analysis.recommendations);
-
-        // GENERAR SIMULACIONES EN PARALELO para mayor velocidad
+        // GENERAR SIMULACIONES EN PARALELO para mayor velocidad (modo legacy - sin haircutIndex)
         console.log(`[Simulations] Generating ${recommendations.length} simulations in parallel...`);
 
         const simulationPromises = recommendations.slice(0, 3).map(async (haircut, index) => {
