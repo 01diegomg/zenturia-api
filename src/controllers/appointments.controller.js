@@ -69,7 +69,13 @@ export async function getAvailableSlots(req, res) {
         } else {
             availableSlots = await bookingService.getAvailableSlots(date);
         }
-        res.json(availableSlots);
+
+        // Convertir slots HH:MM a ISO strings completos para el frontend
+        const slotsWithFullDate = availableSlots.map(timeSlot => {
+            return `${date}T${timeSlot}:00`;
+        });
+
+        res.json({ success: true, slots: slotsWithFullDate });
     } catch (error) {
         // DISPARADOR: Muestra el error al calcular slots disponibles para una fecha
         console.error(`Error en /appointments/available-slots para fecha ${date}:`, error);
@@ -79,19 +85,49 @@ export async function getAvailableSlots(req, res) {
 
 /**
  * Create a new appointment
+ * Accepts either:
+ * - { date: ISO_STRING, serviceId, barberId } (from mobile app, uses JWT for user)
+ * - { dateKey, serviceId, barberId, time, userEmail } (legacy web format)
  *
  * DISPARADOR EN TERMINAL:
  * - "Error en POST /appointments/create:" -> Error al crear una cita
  */
 export async function createAppointment(req, res) {
     try {
-        const { dateKey, serviceId, barberId, time, userEmail } = req.body;
+        let { date, dateKey, serviceId, barberId, time, userEmail } = req.body;
+
+        // Si viene formato ISO (desde app movil), extraer dateKey y time
+        if (date && !dateKey) {
+            const isoDate = new Date(date);
+            if (isNaN(isoDate.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'La fecha proporcionada no es válida.'
+                });
+            }
+            // Extraer fecha y hora del ISO string
+            dateKey = date.split('T')[0];
+            const timePart = date.split('T')[1];
+            time = timePart ? timePart.substring(0, 5) : '00:00';
+        }
+
+        // Si hay usuario autenticado (JWT), usar su email
+        if (req.user && req.user.email) {
+            userEmail = req.user.email;
+        }
 
         // Validar campos requeridos
-        if (!dateKey || !serviceId || !barberId || !time || !userEmail) {
+        if (!dateKey || !serviceId || !barberId || !time) {
             return res.status(400).json({
                 success: false,
-                message: 'Todos los campos son requeridos: dateKey, serviceId, barberId, time, userEmail.'
+                message: 'Campos requeridos: fecha, servicio y barbero.'
+            });
+        }
+
+        if (!userEmail) {
+            return res.status(400).json({
+                success: false,
+                message: 'Usuario no autenticado. Por favor inicia sesión.'
             });
         }
 
@@ -104,8 +140,9 @@ export async function createAppointment(req, res) {
             });
         }
 
-        // Validar que la fecha sea futura
+        // Validar que la fecha sea futura (con margen de 5 minutos)
         const now = new Date();
+        now.setMinutes(now.getMinutes() - 5);
         if (requestedDate <= now) {
             return res.status(400).json({
                 success: false,

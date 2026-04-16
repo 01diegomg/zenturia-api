@@ -525,7 +525,10 @@ async function initApp() {
     if (backToTopButton) {
         backToTopButton.addEventListener('click', (e) => {
             e.preventDefault();
-            router.navigate('inicio');
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         });
     }
 

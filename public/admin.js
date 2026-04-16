@@ -520,9 +520,36 @@ function renderAdminHeroBackgroundForm() {
     }
 }
 
+/**
+ * Convierte HTML con parrafos a texto plano para el editor
+ */
+function htmlToPlainText(html) {
+    if (!html) return '';
+    return html
+        .replace(/<p[^>]*>/gi, '')
+        .replace(/<\/p>/gi, '\n\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/&nbsp;/gi, ' ')
+        .trim();
+}
+
+/**
+ * Convierte texto plano a HTML con parrafos estilizados
+ */
+function plainTextToHtml(text) {
+    if (!text) return '';
+    // Dividir por lineas vacias (doble salto) para crear parrafos
+    const paragraphs = text.split(/\n\s*\n/);
+    return paragraphs
+        .map(p => p.trim())
+        .filter(p => p.length > 0)
+        .map(p => `<p class="text-lg text-gray-300 mb-4">${p.replace(/\n/g, '<br>')}</p>`)
+        .join('');
+}
+
 function renderAdminAboutSectionForm() {
     if (state.siteContent?.about) {
-        document.getElementById('edit-about-text-2').value = state.siteContent.about.text.replace(/<br>/g, "\n");
+        document.getElementById('edit-about-text-2').value = htmlToPlainText(state.siteContent.about.text);
     }
 }
 
@@ -875,7 +902,7 @@ export async function handleSaveAboutSection() {
             imageUrl = uploadData.url; // Usamos la URL de Cloudinary
         }
         const aboutData = {
-            text: document.getElementById('edit-about-text-2').value.replace(/\n/g, '<br>'),
+            text: plainTextToHtml(document.getElementById('edit-about-text-2').value),
             image: imageUrl
         };
         // SEGUNDO, guardamos el contenido (con la URL nueva o la antigua)
@@ -1787,9 +1814,23 @@ function setupAdminEventListeners() {
     document.getElementById('delete-override-btn')?.addEventListener('click', deleteOverride);
 
     // --- DASHBOARD DE VENTAS ---
-    document.getElementById('sales-period-today')?.addEventListener('click', () => updateSalesDashboard('today'));
-    document.getElementById('sales-period-week')?.addEventListener('click', () => updateSalesDashboard('week'));
-    document.getElementById('sales-period-month')?.addEventListener('click', () => updateSalesDashboard('month'));
+    document.getElementById('sales-period-today')?.addEventListener('click', () => {
+        hideMonthSelector();
+        updateSalesDashboard('today');
+    });
+    document.getElementById('sales-period-week')?.addEventListener('click', () => {
+        hideMonthSelector();
+        updateSalesDashboard('week');
+    });
+    document.getElementById('sales-period-month')?.addEventListener('click', () => {
+        hideMonthSelector();
+        updateSalesDashboard('month');
+    });
+    document.getElementById('sales-period-custom')?.addEventListener('click', () => {
+        showMonthSelector();
+    });
+    document.getElementById('sales-prev-month')?.addEventListener('click', () => navigateSalesMonth(-1));
+    document.getElementById('sales-next-month')?.addEventListener('click', () => navigateSalesMonth(1));
 
     // Renderizar dashboard de ventas al cargar
     renderSalesDashboard();
@@ -1801,9 +1842,85 @@ function setupAdminEventListeners() {
 
 let currentSalesPeriod = 'today';
 let salesLoading = false;
+let selectedSalesMonth = new Date();
+
+const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 function renderSalesDashboard() {
     updateSalesDashboard('today');
+}
+
+function showMonthSelector() {
+    const selector = document.getElementById('sales-month-selector');
+    if (selector) {
+        selector.classList.remove('hidden');
+        updateMonthDisplay();
+        loadCustomMonthData();
+    }
+    // Activar boton custom
+    document.querySelectorAll('.sales-period-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('sales-period-custom')?.classList.add('active');
+}
+
+function hideMonthSelector() {
+    const selector = document.getElementById('sales-month-selector');
+    if (selector) selector.classList.add('hidden');
+}
+
+function updateMonthDisplay() {
+    const display = document.getElementById('sales-selected-month');
+    if (display) {
+        display.textContent = `${MONTH_NAMES[selectedSalesMonth.getMonth()]} ${selectedSalesMonth.getFullYear()}`;
+    }
+}
+
+function navigateSalesMonth(direction) {
+    selectedSalesMonth.setMonth(selectedSalesMonth.getMonth() + direction);
+    updateMonthDisplay();
+    loadCustomMonthData();
+}
+
+async function loadCustomMonthData() {
+    const year = selectedSalesMonth.getFullYear();
+    const month = selectedSalesMonth.getMonth();
+
+    // Primer dia del mes
+    const startDate = new Date(year, month, 1).toISOString().split('T')[0];
+    // Ultimo dia del mes
+    const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+
+    await updateSalesDashboardCustom(startDate, endDate);
+}
+
+async function updateSalesDashboardCustom(startDate, endDate) {
+    if (salesLoading) return;
+    salesLoading = true;
+
+    showSalesLoading(true);
+
+    try {
+        const token = sessionStorage.getItem('barber_accessToken');
+        if (!token) throw new Error('No autenticado');
+
+        const response = await fetch(
+            `${API_BASE_URL}/sales/stats?period=custom&startDate=${startDate}&endDate=${endDate}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+
+        if (!response.ok) throw new Error('Error al cargar datos');
+
+        const data = await response.json();
+        if (data.success) {
+            updateSalesDashboardUI(data);
+        }
+    } catch (error) {
+        console.error('Error al cargar datos de ventas:', error);
+        ui.showToast('Error al cargar datos de ventas', 'error');
+    } finally {
+        showSalesLoading(false);
+        salesLoading = false;
+    }
 }
 
 /**
@@ -1824,7 +1941,7 @@ async function updateSalesDashboard(period) {
 
     try {
         // Obtener token de autenticación
-        const token = sessionStorage.getItem('accessToken');
+        const token = sessionStorage.getItem('barber_accessToken');
         if (!token) {
             throw new Error('No autenticado');
         }
@@ -2150,6 +2267,18 @@ export async function renderBarbersList() {
             const specialties = JSON.parse(barber.specialties || '[]');
             const appointmentCount = barber._count?.appointments || 0;
 
+            // Verificar horario de hoy
+            const todayIndex = new Date().getDay();
+            const todaySchedule = (barber.schedules || []).find(s => s.dayOfWeek === todayIndex);
+            const isDayOff = todaySchedule?.isDayOff || false;
+            let todayHours = '';
+            if (!isDayOff && todaySchedule) {
+                try {
+                    const hours = JSON.parse(todaySchedule.workingHours || '[]');
+                    if (hours[0]) todayHours = `${hours[0].start} - ${hours[0].end}`;
+                } catch (e) { }
+            }
+
             return `
                 <div class="barber-admin-card ${!barber.isActive ? 'inactive' : ''}" data-barber-id="${barber.id}">
                     <div class="barber-admin-header">
@@ -2172,6 +2301,10 @@ export async function renderBarbersList() {
                         <div class="barber-stat">
                             <span class="material-icons text-sm">event</span>
                             <span>${appointmentCount} citas</span>
+                        </div>
+                        <div class="barber-stat ${isDayOff ? 'day-off' : 'working'}">
+                            <span class="material-icons text-sm">${isDayOff ? 'event_busy' : 'schedule'}</span>
+                            <span>${isDayOff ? 'Día libre' : (todayHours || 'Sin horario')}</span>
                         </div>
                     </div>
                     <div class="barber-admin-actions">

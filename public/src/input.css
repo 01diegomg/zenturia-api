@@ -1144,6 +1144,60 @@ body {
 #dropdown-logout-btn:hover {
   color: var(--rojo-oscuro); /* Un rojo más oscuro al pasar el ratón */
 }
+
+/* Estilos mejorados para items del dropdown */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  color: var(--gris-suave);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.dropdown-item:hover {
+  background: rgba(207, 175, 124, 0.1);
+  color: var(--dorado-vintage);
+}
+
+.dropdown-item .material-icons {
+  color: var(--gris-suave);
+  transition: color 0.2s ease;
+}
+
+.dropdown-item:hover .material-icons {
+  color: var(--dorado-vintage);
+}
+
+/* Item destacado - Agenda tu Cita */
+.dropdown-item-highlight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--negro-intenso);
+  background: linear-gradient(135deg, var(--dorado-vintage), #e0c08c);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.dropdown-item-highlight:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(207, 175, 124, 0.4);
+}
+
+.dropdown-item-highlight .material-icons {
+  color: var(--negro-intenso);
+}
+
 .cancelled-appointment {
   opacity: 0.5;
   border-left: 4px solid #6b7280; /* Borde gris */
@@ -5557,6 +5611,98 @@ img:not([data-loaded]) {
   color: var(--negro-intenso);
 }
 
+/* Selector de Mes para Historial */
+.sales-month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--surface-secondary);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.sales-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--gris-suave);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sales-nav-btn:hover:not(:disabled) {
+  background: var(--dorado-vintage);
+  color: var(--negro-intenso);
+  border-color: var(--dorado-vintage);
+}
+
+.sales-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sales-month-display {
+  min-width: 180px;
+  text-align: center;
+}
+
+.sales-month-display .month-text {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--blanco-puro);
+  text-transform: capitalize;
+}
+
+.sales-month-display .year-text {
+  font-size: var(--font-size-sm);
+  color: var(--gris-suave);
+}
+
+.sales-month-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-left: var(--spacing-md);
+}
+
+.btn-load-month {
+  padding: 0.5rem 1rem;
+  background: var(--dorado-vintage);
+  color: var(--negro-intenso);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-load-month:hover {
+  background: var(--acento-hover);
+}
+
+.btn-close-month {
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--gris-suave);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-close-month:hover {
+  background: var(--color-error-500);
+  border-color: var(--color-error-500);
+  color: white;
+}
+
 /* Métricas Grid */
 .sales-metrics-grid {
   display: grid;
@@ -7292,6 +7438,14 @@ body.mobile-menu-open {
   font-size: 0.85rem;
 }
 
+.barber-stat.working {
+  color: var(--color-success-400);
+}
+
+.barber-stat.day-off {
+  color: var(--color-warning-400);
+}
+
 .barber-admin-actions {
   display: flex;
   gap: 0.5rem;
@@ -7394,40 +7548,100 @@ body.mobile-menu-open {
 
 /* Editor de horario */
 .schedule-day-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 120px 1fr;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
   background: var(--surface-secondary);
   border-radius: var(--radius-md);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.schedule-day-row:hover {
+  border-color: var(--border-medium);
+  background: var(--surface-elevated);
 }
 
 .schedule-day-name {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--blanco-puro);
-  min-width: 100px;
+  font-size: 1rem;
 }
 
 .schedule-day-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.schedule-day-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-primary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.schedule-day-controls label:hover {
+  border-color: var(--dorado-vintage);
+}
+
+.schedule-day-controls label:has(input:checked) {
+  background: rgba(207, 175, 124, 0.15);
+  border-color: var(--dorado-vintage);
 }
 
 .schedule-time-inputs {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .schedule-time-inputs input[type="time"] {
-  padding: 0.4rem 0.6rem;
-  background: var(--surface-elevated);
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-primary);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: var(--blanco-puro);
+  font-size: 0.95rem;
+  min-width: 130px;
+}
+
+.schedule-time-inputs input[type="time"]:focus {
+  border-color: var(--dorado-vintage);
+  outline: none;
+}
+
+.schedule-time-inputs span {
+  color: var(--gris-suave);
   font-size: 0.9rem;
+}
+
+/* Responsive para modal de horarios */
+@media (max-width: 640px) {
+  .schedule-day-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .schedule-day-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .schedule-time-inputs {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 /* ===================================

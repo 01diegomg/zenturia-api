@@ -101,23 +101,55 @@
                             <span id="user-menu-name"></span>
                             <span class="material-icons text-sm">expand_more</span>
                         </button>
-                        <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-48 bg-[#1a1a1a] rounded-md shadow-lg py-1 z-50">
-                            <a href="#user-portal-view" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
+                        <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-56 bg-[#1a1a1a] rounded-lg shadow-xl py-2 z-50 border border-gray-700">
+                            <!-- Mi Cuenta -->
+                            <a href="#user-portal-view" class="dropdown-item">
                                 <span class="material-icons text-sm">account_circle</span>
                                 Mi Cuenta
                             </a>
-                            <button id="edit-profile-btn" class="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
+                            <button id="edit-profile-btn" class="dropdown-item w-full text-left">
                                 <span class="material-icons text-sm">edit</span>
                                 Editar Perfil
                             </button>
-                            <a href="#agendar" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
-                                <span class="material-icons text-sm">add_circle</span>
-                                Nueva Cita
+
+                            <hr class="border-gray-700 my-2">
+
+                            <!-- Navegacion rapida -->
+                            <p class="px-4 py-1 text-xs text-gray-500 uppercase tracking-wider">Navegar</p>
+                            <a href="#sobre" class="dropdown-item">
+                                <span class="material-icons text-sm">info</span>
+                                Nuestra Esencia
                             </a>
-                            <hr class="border-gray-700 my-1">
-                            <button id="dropdown-logout-btn" class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2">
+                            <a href="#servicios" class="dropdown-item">
+                                <span class="material-icons text-sm">content_cut</span>
+                                Nuestros Rituales
+                            </a>
+                            <a href="#galeria" class="dropdown-item">
+                                <span class="material-icons text-sm">photo_library</span>
+                                Nuestro Arte
+                            </a>
+                            <a href="#testimonios" class="dropdown-item">
+                                <span class="material-icons text-sm">verified</span>
+                                Reseñas
+                            </a>
+                            <a href="#ubicacion" class="dropdown-item">
+                                <span class="material-icons text-sm">location_on</span>
+                                Ubicacion
+                            </a>
+
+                            <hr class="border-gray-700 my-2">
+
+                            <!-- Agendar destacado -->
+                            <a href="#agendar" class="dropdown-item-highlight">
+                                <span class="material-icons text-sm">calendar_today</span>
+                                Agenda tu Cita
+                            </a>
+
+                            <hr class="border-gray-700 my-2">
+
+                            <button id="dropdown-logout-btn" class="dropdown-item text-red-400 w-full text-left">
                                 <span class="material-icons text-sm">logout</span>
-                                Cerrar Sesión
+                                Cerrar Sesion
                             </button>
                         </div>
                     </div>
@@ -515,6 +547,23 @@
                                 <button id="sales-period-today" class="sales-period-btn active">Hoy</button>
                                 <button id="sales-period-week" class="sales-period-btn">Esta Semana</button>
                                 <button id="sales-period-month" class="sales-period-btn">Este Mes</button>
+                                <button id="sales-period-custom" class="sales-period-btn">
+                                    <span class="material-icons text-sm">date_range</span>
+                                    Otro Mes
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Selector de mes personalizado -->
+                        <div id="sales-month-selector" class="sales-month-selector hidden">
+                            <div class="flex items-center justify-center gap-4 py-4 bg-surface-secondary rounded-lg mb-6">
+                                <button id="sales-prev-month" class="sales-nav-btn">
+                                    <span class="material-icons">chevron_left</span>
+                                </button>
+                                <span id="sales-selected-month" class="text-lg font-semibold text-white min-w-[180px] text-center">Enero 2026</span>
+                                <button id="sales-next-month" class="sales-nav-btn">
+                                    <span class="material-icons">chevron_right</span>
+                                </button>
                             </div>
                         </div>
 
@@ -827,7 +876,13 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="edit-about-text-2">Modificar Texto</label>
-                                            <textarea id="edit-about-text-2" rows="5" class="portal-input"></textarea>
+                                            <textarea id="edit-about-text-2" rows="8" class="portal-input" placeholder="Escribe tu texto aqui...
+
+Deja una linea en blanco para crear un nuevo parrafo."></textarea>
+                                            <p class="text-xs text-gray-500 mt-2">
+                                                <span class="material-icons text-xs align-middle">info</span>
+                                                Escribe el texto normalmente. Los parrafos se crean automaticamente al dejar una linea en blanco.
+                                            </p>
                                         </div>
                                         <button id="save-about-section-btn" class="modal-button">Guardar Cambios en "Nuestra Esencia"</button>
                                     </div>
@@ -1149,9 +1204,10 @@
 
     <!-- Modal: Horario del Barbero -->
     <div id="barber-schedule-modal" class="modal-overlay hidden">
-        <div class="modal-content max-w-2xl">
+        <div class="modal-content max-w-3xl">
             <button class="close-modal-btn">&times;</button>
             <h3 id="barber-schedule-title" class="font-display text-2xl mb-6">Horario de Trabajo</h3>
+            <p class="text-gray-400 text-sm mb-4">Configura el horario de trabajo para cada dia de la semana</p>
 
             <div id="barber-schedule-editor" class="space-y-4">
                 <!-- El editor de horarios se generará dinámicamente -->
