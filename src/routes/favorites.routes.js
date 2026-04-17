@@ -1,7 +1,7 @@
 // --- src/routes/favorites.routes.js ---
 import express from 'express';
 import * as favoritesController from '../controllers/favorites.controller.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
