@@ -65,8 +65,10 @@ export async function registerClient(req, res) {
             success: true,
             message: 'Usuario registrado con éxito',
             user: {
+                id: newUser.id,
                 name: newUser.name,
                 email: newUser.email,
+                phone: newUser.phone,
                 role: newUser.role
             },
             accessToken,
@@ -121,8 +123,10 @@ export async function loginClient(req, res) {
             success: true,
             message: 'Login exitoso',
             user: {
+                id: user.id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
                 role: user.role
             },
             accessToken,
@@ -187,8 +191,10 @@ export async function loginAdmin(req, res) {
             success: true,
             message: 'Login de admin exitoso',
             user: {
+                id: user.id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
                 role: user.role
             },
             accessToken,

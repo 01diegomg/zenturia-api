@@ -55,7 +55,11 @@ export async function authenticateToken(req, res, next) {
             select: { tokenVersion: true }
         });
 
-        if (!user || user.tokenVersion !== decoded.tokenVersion) {
+        // Normalizar tokenVersion: si es undefined o null, usar 0
+        const dbTokenVersion = typeof user?.tokenVersion === 'number' ? user.tokenVersion : 0;
+        const tokenTokenVersion = typeof decoded.tokenVersion === 'number' ? decoded.tokenVersion : 0;
+
+        if (!user || dbTokenVersion !== tokenTokenVersion) {
             return res.status(401).json({
                 success: false,
                 message: 'Sesión inválida. Por favor, inicia sesión de nuevo.',

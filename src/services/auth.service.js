@@ -23,12 +23,15 @@ const rotatedTokensCache = new Map();
  * @returns {string} JWT access token
  */
 export function generateAccessToken(user) {
+    // Asegurar que tokenVersion tenga un valor numérico (default 0)
+    const tokenVersion = typeof user.tokenVersion === 'number' ? user.tokenVersion : 0;
+
     return jwt.sign(
         {
             userId: user.id,
             email: user.email,
             role: user.role,
-            tokenVersion: user.tokenVersion
+            tokenVersion: tokenVersion
         },
         JWT_SECRET,
         { expiresIn: ACCESS_TOKEN_EXPIRY }
