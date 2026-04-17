@@ -18,6 +18,7 @@ model User {
   password      String
   role          String         @default("CLIENT")
   tokenVersion  Int            @default(0)
+  pushToken     String?        // Token para notificaciones push (Expo)
   appointments  Appointment[]
   refreshTokens RefreshToken[]
 }

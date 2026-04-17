@@ -20,5 +20,12 @@ router.post('/logout', authController.logout);
 router.post('/logout-all', authenticateToken, authController.logoutAll);
 router.get('/me', authenticateToken, authController.getCurrentUser);
 router.put('/profile', authenticateToken, authController.updateProfile);
+router.patch('/users/profile', authenticateToken, authController.updateProfile); // Also support PATCH
+
+// Push notifications token
+router.post('/users/push-token', authenticateToken, authController.savePushToken);
+
+// Change password
+router.post('/users/change-password', authenticateToken, authController.changePassword);
 
 export default router;

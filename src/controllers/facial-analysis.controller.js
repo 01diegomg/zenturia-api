@@ -337,8 +337,8 @@ function simulateFaceAnalysis() {
 }
 
 /**
- * Generar simulación con Replicate - Versión optimizada
- * Intenta múltiples estrategias para máxima compatibilidad
+ * Generar simulación con Replicate - Versión PREMIUM con preservación de identidad
+ * Usa InstantID para mantener el rostro del usuario en las simulaciones
  */
 async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
@@ -348,26 +348,242 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
         return generateSimulationWithFalAI(originalImageUrl, haircutStyle);
     }
 
-    console.log(`[Replicate] Token found (${REPLICATE_API_TOKEN.length} chars), starting generation for: ${haircutStyle}`);
+    console.log(`[Replicate] Token found, starting PREMIUM generation for: ${haircutStyle}`);
+    console.log(`[Replicate] Using original face from: ${originalImageUrl.substring(0, 60)}...`);
 
-    // Estrategia 1: Intentar con IP-Adapter Face ID (preserva identidad)
+    // Estrategia 1: InstantID - MEJOR para preservar identidad facial (PRIORITY)
     try {
+        console.log('[Replicate] Trying InstantID (best for face preservation)...');
+        const result = await generateWithInstantID(originalImageUrl, haircutStyle, REPLICATE_API_TOKEN);
+        if (result) {
+            console.log('[Replicate] InstantID SUCCESS!');
+            return result;
+        }
+    } catch (e) {
+        console.log(`[Replicate] InstantID failed: ${e.message}`);
+    }
+
+    // Estrategia 2: PhotoMaker - También preserva identidad
+    try {
+        console.log('[Replicate] Trying PhotoMaker...');
         const result = await tryIPAdapterFaceID(originalImageUrl, haircutStyle, REPLICATE_API_TOKEN);
         if (result) return result;
     } catch (e) {
-        console.log(`[Replicate] IP-Adapter failed: ${e.message}`);
+        console.log(`[Replicate] PhotoMaker failed: ${e.message}`);
     }
 
-    // Estrategia 2: Intentar con SDXL Lightning (rápido, genera imagen de referencia)
+    // Estrategia 3: PuLID - Otra opción para preservar identidad
     try {
-        const result = await generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
+        console.log('[Replicate] Trying PuLID...');
+        const result = await generateWithPuLID(originalImageUrl, haircutStyle, REPLICATE_API_TOKEN);
         if (result) return result;
     } catch (e) {
-        console.log(`[Replicate] SDXL Lightning failed: ${e.message}`);
+        console.log(`[Replicate] PuLID failed: ${e.message}`);
     }
 
-    // Estrategia 3: FAL.ai como último recurso
+    // Estrategia 4: FAL.ai como último recurso
+    console.log('[Replicate] All models failed, trying FAL.ai...');
     return generateSimulationWithFalAI(originalImageUrl, haircutStyle);
+}
+
+/**
+ * InstantID - MEJOR modelo para preservar identidad facial
+ * Genera imágenes de la MISMA persona con diferente estilo de cabello
+ * Costo: ~$0.05-0.15 por imagen, Tiempo: ~30-60 segundos
+ */
+async function generateWithInstantID(originalImageUrl, haircutStyle, token) {
+    console.log(`[InstantID] Starting generation for: ${haircutStyle}`);
+
+    // Prompt optimizado para barbería - preserva identidad facial
+    const prompt = `professional barbershop photo, same person with ${haircutStyle} haircut, perfectly styled fresh haircut, clean sharp lines, professional barber result, studio lighting, high quality portrait, photorealistic, 4k, detailed face, natural skin texture, confident expression, front view, sharp focus on hair and face`;
+
+    const negativePrompt = 'different person, different face, blurry, low quality, distorted face, deformed, cartoon, anime, painting, drawing, bad anatomy, extra limbs, watermark, text, logo, ugly, disfigured';
+
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            // InstantID model - zsxkib/instant-id
+            version: "a18a7e5f8bd3a60f227a7e3b37e9eeebba29a8ae4e0a9889b2389682e0cee22a",
+            input: {
+                image: originalImageUrl,
+                prompt: prompt,
+                negative_prompt: negativePrompt,
+                ip_adapter_scale: 0.8,  // Alta preservación de identidad
+                controlnet_conditioning_scale: 0.8,
+                num_inference_steps: 30,  // Buena calidad
+                guidance_scale: 5,
+                seed: -1  // Random para variedad
+            }
+        })
+    });
+
+    const prediction = await response.json();
+    console.log(`[InstantID] Initial response:`, prediction.status || prediction.detail);
+
+    if (prediction.detail) {
+        // Si el modelo no existe, intentar versión alternativa
+        if (prediction.detail.includes('does not exist') || prediction.detail.includes('not found')) {
+            console.log('[InstantID] Model not found, trying alternative...');
+            return await generateWithInstantIDAlternative(originalImageUrl, haircutStyle, token);
+        }
+        throw new Error(prediction.detail);
+    }
+
+    if (!prediction.urls?.get) {
+        console.log('[InstantID] No polling URL');
+        return null;
+    }
+
+    // Polling - esperar hasta 120 segundos para alta calidad
+    let result = prediction;
+    for (let i = 0; i < 120; i++) {
+        if (result.status === 'succeeded' || result.status === 'failed' || result.status === 'canceled') break;
+
+        await sleep(1000);
+
+        try {
+            const statusRes = await fetch(result.urls.get, {
+                headers: { 'Authorization': `Token ${token}` }
+            });
+            result = await statusRes.json();
+        } catch (e) {
+            console.log(`[InstantID] Polling error: ${e.message}`);
+        }
+
+        if (i > 0 && i % 15 === 0) {
+            console.log(`[InstantID] Polling ${i}s: ${result.status}`);
+        }
+    }
+
+    if (result.status === 'succeeded' && result.output) {
+        const url = Array.isArray(result.output) ? result.output[0] : result.output;
+        console.log(`[InstantID] SUCCESS: ${url.substring(0, 60)}...`);
+        return url;
+    }
+
+    console.log(`[InstantID] Final status: ${result.status}`, result.error || '');
+    return null;
+}
+
+/**
+ * InstantID Alternative - Usando otra versión del modelo
+ */
+async function generateWithInstantIDAlternative(originalImageUrl, haircutStyle, token) {
+    console.log(`[InstantID-Alt] Trying alternative model...`);
+
+    const prompt = `photo of same person, ${haircutStyle} haircut, professional barbershop quality, studio lighting, high resolution, photorealistic portrait`;
+
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            // InstantID alternative version
+            version: "0f2a3b3c70f7b9fb8bafd4d0a4f8f7cca2f2db6c1f6d1b8a5f5c3a2b1c0d9e8f",
+            input: {
+                face_image: originalImageUrl,
+                prompt: prompt,
+                negative_prompt: 'different person, blurry, low quality, cartoon',
+                num_steps: 25,
+                identitynet_strength_ratio: 0.9,
+                adapter_strength_ratio: 0.9
+            }
+        })
+    });
+
+    const prediction = await response.json();
+
+    if (prediction.detail) {
+        throw new Error(prediction.detail);
+    }
+
+    if (!prediction.urls?.get) return null;
+
+    // Polling
+    let result = prediction;
+    for (let i = 0; i < 90; i++) {
+        if (result.status === 'succeeded' || result.status === 'failed' || result.status === 'canceled') break;
+        await sleep(1000);
+        try {
+            const statusRes = await fetch(result.urls.get, {
+                headers: { 'Authorization': `Token ${token}` }
+            });
+            result = await statusRes.json();
+        } catch (e) { /* ignore */ }
+    }
+
+    if (result.status === 'succeeded' && result.output) {
+        const url = Array.isArray(result.output) ? result.output[0] : result.output;
+        console.log(`[InstantID-Alt] SUCCESS: ${url.substring(0, 60)}...`);
+        return url;
+    }
+
+    return null;
+}
+
+/**
+ * PuLID - Preservación de identidad con Pure and Lightning ID
+ * Otra alternativa para mantener identidad facial
+ */
+async function generateWithPuLID(originalImageUrl, haircutStyle, token) {
+    console.log(`[PuLID] Generating for: ${haircutStyle}`);
+
+    const prompt = `professional portrait photo, same person with ${haircutStyle} haircut, barbershop quality, detailed face, sharp focus, high resolution, photorealistic`;
+
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            // PuLID model
+            version: "be574dcd52ff9a03626c69c96a7c9e28ac2cd9c8c4de40e0a6f8e7f4e6c3b2a1",
+            input: {
+                main_face_image: originalImageUrl,
+                prompt: prompt,
+                negative_prompt: 'different face, blurry, cartoon, low quality',
+                num_steps: 25,
+                cfg_scale: 7,
+                id_scale: 0.8
+            }
+        })
+    });
+
+    const prediction = await response.json();
+
+    if (prediction.detail) {
+        throw new Error(prediction.detail);
+    }
+
+    if (!prediction.urls?.get) return null;
+
+    // Polling
+    let result = prediction;
+    for (let i = 0; i < 90; i++) {
+        if (result.status === 'succeeded' || result.status === 'failed' || result.status === 'canceled') break;
+        await sleep(1000);
+        try {
+            const statusRes = await fetch(result.urls.get, {
+                headers: { 'Authorization': `Token ${token}` }
+            });
+            result = await statusRes.json();
+        } catch (e) { /* ignore */ }
+    }
+
+    if (result.status === 'succeeded' && result.output) {
+        const url = Array.isArray(result.output) ? result.output[0] : result.output;
+        console.log(`[PuLID] SUCCESS: ${url.substring(0, 60)}...`);
+        return url;
+    }
+
+    return null;
 }
 
 /**

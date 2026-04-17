@@ -440,6 +440,113 @@ export async function updateProfile(req, res) {
     }
 }
 
+/**
+ * Save push notification token for user
+ * POST /users/push-token
+ */
+export async function savePushToken(req, res) {
+    try {
+        const { pushToken } = req.body;
+        const userId = req.user.userId;
+
+        if (!pushToken) {
+            return res.status(400).json({
+                success: false,
+                message: 'pushToken es requerido.'
+            });
+        }
+
+        // Validate token format (Expo push token)
+        if (!pushToken.startsWith('ExponentPushToken[') && !pushToken.startsWith('ExpoPushToken[')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Formato de token invalido.'
+            });
+        }
+
+        // Update user's push token
+        await prisma.user.update({
+            where: { id: userId },
+            data: { pushToken }
+        });
+
+        console.log(`[Auth] Push token saved for user ${userId}: ${pushToken.substring(0, 30)}...`);
+
+        res.status(200).json({
+            success: true,
+            message: 'Token de notificaciones guardado.'
+        });
+    } catch (error) {
+        console.error('Error saving push token:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error del servidor al guardar token.'
+        });
+    }
+}
+
+/**
+ * Change user password
+ * POST /users/change-password
+ */
+export async function changePassword(req, res) {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user.userId;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Contrasena actual y nueva son requeridas.'
+            });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: 'La nueva contrasena debe tener al menos 8 caracteres.'
+            });
+        }
+
+        // Get current user
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado.'
+            });
+        }
+
+        // Verify current password
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: 'La contrasena actual es incorrecta.'
+            });
+        }
+
+        // Hash and save new password
+        const hashedPassword = await bcrypt.hash(newPassword, config.bcryptSaltRounds);
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword }
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Contrasena actualizada con exito.'
+        });
+    } catch (error) {
+        console.error('Error changing password:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error del servidor al cambiar contrasena.'
+        });
+    }
+}
+
 export default {
     registerClient,
     loginClient,
@@ -448,5 +555,7 @@ export default {
     logout,
     logoutAll,
     getCurrentUser,
-    updateProfile
+    updateProfile,
+    savePushToken,
+    changePassword
 };
