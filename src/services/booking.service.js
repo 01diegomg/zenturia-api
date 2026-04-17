@@ -4,10 +4,12 @@ import * as emailService from './email.service.js';
 
 /**
  * Create an appointment
+ * Usa transacción atómica para prevenir condiciones de carrera (empalme de citas)
  */
 export async function createAppointment({ dateKey, serviceId, barberId, time, userEmail }) {
     const requestedDateTime = new Date(`${dateKey}T${time}:00`);
 
+    // Primero obtenemos los datos necesarios fuera de la transacción
     const user = await prisma.user.findUnique({ where: { email: userEmail } });
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
     const barber = await prisma.barber.findUnique({ where: { id: barberId } });
@@ -24,104 +26,107 @@ export async function createAppointment({ dateKey, serviceId, barberId, time, us
         throw error;
     }
 
-    // VALIDACIÓN: Verificar que el horario esté disponible para este barbero
-    // Esto previene el empalme de citas cuando dos usuarios reservan al mismo tiempo
     const serviceDuration = service.duration || 30; // duración en minutos
     const slotStart = requestedDateTime;
     const slotEnd = new Date(requestedDateTime.getTime() + serviceDuration * 60 * 1000);
 
-    // Buscar citas que se empalmen con el horario solicitado
-    const conflictingAppointment = await prisma.appointment.findFirst({
-        where: {
-            barberId: barber.id,
-            status: { not: 'CANCELLED' },
-            // La cita existente debe empalmarse con el slot solicitado
-            OR: [
-                // El inicio del nuevo slot cae dentro de una cita existente
-                {
-                    date: { lte: slotStart },
-                    AND: {
-                        service: {
-                            // El fin de la cita existente es después del inicio del nuevo slot
-                        }
+    // TRANSACCIÓN ATÓMICA: Verificación y creación en una sola operación
+    // Esto previene condiciones de carrera cuando dos usuarios reservan al mismo tiempo
+    try {
+        const newAppointment = await prisma.$transaction(async (tx) => {
+            // Dentro de la transacción, verificamos la disponibilidad
+            // Buscar TODAS las citas del día para este barbero (con bloqueo implícito)
+            const existingAppointments = await tx.appointment.findMany({
+                where: {
+                    barberId: barber.id,
+                    status: { not: 'CANCELLED' },
+                    date: {
+                        gte: new Date(dateKey + 'T00:00:00'),
+                        lte: new Date(dateKey + 'T23:59:59.999')
                     }
+                },
+                include: {
+                    service: { select: { duration: true } }
                 }
-            ],
-            // Simplificación: buscar citas en el mismo horario exacto
-            date: slotStart
-        },
-        include: {
-            service: { select: { duration: true } }
-        }
-    });
+            });
 
-    if (conflictingAppointment) {
-        const error = new Error('Este horario ya no está disponible. Por favor selecciona otro horario.');
-        error.statusCode = 409; // Conflict
-        throw error;
-    }
+            // Verificar cada cita existente para detectar empalmes
+            for (const existingAppt of existingAppointments) {
+                const existingStart = existingAppt.date;
+                const existingDuration = existingAppt.service?.duration || 30;
+                const existingEnd = new Date(existingStart.getTime() + existingDuration * 60 * 1000);
 
-    // Validación adicional: verificar que no haya citas que terminen durante nuestro slot
-    // o que nuestro slot termine durante otra cita
-    const overlappingAppointments = await prisma.appointment.findMany({
-        where: {
-            barberId: barber.id,
-            status: { not: 'CANCELLED' },
-            date: {
-                // Buscar citas en el rango del día
-                gte: new Date(dateKey + 'T00:00:00'),
-                lte: new Date(dateKey + 'T23:59:59.999')
+                // Verificar si hay empalme:
+                // El nuevo slot empieza durante la cita existente O
+                // El nuevo slot termina durante la cita existente O
+                // La cita existente está completamente dentro del nuevo slot
+                const overlaps = (
+                    (slotStart >= existingStart && slotStart < existingEnd) || // Nuevo empieza durante existente
+                    (slotEnd > existingStart && slotEnd <= existingEnd) ||     // Nuevo termina durante existente
+                    (slotStart <= existingStart && slotEnd >= existingEnd)     // Nuevo envuelve existente
+                );
+
+                if (overlaps) {
+                    const error = new Error('Este horario ya no está disponible. Por favor selecciona otro horario.');
+                    error.statusCode = 409; // Conflict
+                    throw error;
+                }
             }
-        },
-        include: {
-            service: { select: { duration: true } }
-        }
-    });
 
-    // Verificar cada cita existente para detectar empalmes
-    for (const existingAppt of overlappingAppointments) {
-        const existingStart = existingAppt.date;
-        const existingDuration = existingAppt.service?.duration || 30;
-        const existingEnd = new Date(existingStart.getTime() + existingDuration * 60 * 1000);
+            // Si llegamos aquí, el horario está disponible - crear la cita dentro de la transacción
+            const appointment = await tx.appointment.create({
+                data: {
+                    date: requestedDateTime,
+                    userId: user.id,
+                    serviceId: service.id,
+                    barberId: barber.id
+                }
+            });
 
-        // Verificar si hay empalme:
-        // El nuevo slot empieza durante la cita existente O
-        // El nuevo slot termina durante la cita existente O
-        // La cita existente está completamente dentro del nuevo slot
-        const overlaps = (
-            (slotStart >= existingStart && slotStart < existingEnd) || // Nuevo empieza durante existente
-            (slotEnd > existingStart && slotEnd <= existingEnd) ||     // Nuevo termina durante existente
-            (slotStart <= existingStart && slotEnd >= existingEnd)     // Nuevo envuelve existente
-        );
-
-        if (overlaps) {
-            const error = new Error('Este horario se empalma con otra cita. Por favor selecciona otro horario.');
-            error.statusCode = 409; // Conflict
-            throw error;
-        }
-    }
-
-    const newAppointment = await prisma.appointment.create({
-        data: {
-            date: requestedDateTime,
-            userId: user.id,
-            serviceId: service.id,
-            barberId: barber.id
-        }
-    });
-
-    // Send confirmation email (non-blocking)
-    emailService.sendAppointmentConfirmation(user, service, requestedDateTime, barber)
-        .then(sent => {
-            if (!sent) {
-                console.warn(`⚠️  Email de confirmación no enviado a ${user.email} para cita del ${requestedDateTime.toISOString()}`);
-            }
-        })
-        .catch(err => {
-            console.error(`❌ Error al enviar email de confirmación a ${user.email}:`, err.message);
+            return appointment;
+        }, {
+            // Configuración de la transacción para máxima seguridad contra race conditions
+            isolationLevel: 'Serializable', // Nivel de aislamiento más estricto
+            maxWait: 5000, // Esperar máximo 5 segundos para obtener conexión
+            timeout: 10000, // Timeout de la transacción: 10 segundos
         });
 
-    return { appointment: newAppointment, user, service, barber };
+        // Send confirmation email (non-blocking, fuera de la transacción)
+        emailService.sendAppointmentConfirmation(user, service, requestedDateTime, barber)
+            .then(sent => {
+                if (!sent) {
+                    console.warn(`⚠️  Email de confirmación no enviado a ${user.email} para cita del ${requestedDateTime.toISOString()}`);
+                }
+            })
+            .catch(err => {
+                console.error(`❌ Error al enviar email de confirmación a ${user.email}:`, err.message);
+            });
+
+        return { appointment: newAppointment, user, service, barber };
+
+    } catch (error) {
+        // Si es un error de constraint único (P2002) - cita duplicada
+        if (error.code === 'P2002') {
+            const conflictError = new Error('Este horario acaba de ser reservado. Por favor selecciona otro horario.');
+            conflictError.statusCode = 409;
+            throw conflictError;
+        }
+        // Si es un error de transacción por conflicto de serialización
+        if (error.code === 'P2034' || error.message?.includes('Serializable')) {
+            const conflictError = new Error('El horario fue reservado por otro usuario. Por favor selecciona otro horario.');
+            conflictError.statusCode = 409;
+            throw conflictError;
+        }
+        // Si el error ya tiene statusCode (es nuestro error de validación), re-lanzarlo
+        if (error.statusCode) {
+            throw error;
+        }
+        // Para otros errores, envolver en un error genérico
+        console.error('Error inesperado al crear cita:', error);
+        const genericError = new Error('Error al crear la cita. Por favor intenta de nuevo.');
+        genericError.statusCode = 500;
+        throw genericError;
+    }
 }
 
 /**

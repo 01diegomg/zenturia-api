@@ -57,6 +57,9 @@ model Appointment {
   @@index([userId])
   @@index([status])
   @@index([barberId])
+  // Índice único para prevenir citas duplicadas en el mismo horario con el mismo barbero
+  // Esto es una capa adicional de seguridad a nivel de base de datos
+  @@unique([barberId, date], name: "unique_barber_datetime")
 }
 
 // === MODELO DE RESEÑAS DE CITAS ===
