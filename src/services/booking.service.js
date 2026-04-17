@@ -85,8 +85,6 @@ export async function createAppointment({ dateKey, serviceId, barberId, time, us
 
             return appointment;
         }, {
-            // Configuración de la transacción para máxima seguridad contra race conditions
-            isolationLevel: 'Serializable', // Nivel de aislamiento más estricto
             maxWait: 5000, // Esperar máximo 5 segundos para obtener conexión
             timeout: 10000, // Timeout de la transacción: 10 segundos
         });
@@ -105,18 +103,6 @@ export async function createAppointment({ dateKey, serviceId, barberId, time, us
         return { appointment: newAppointment, user, service, barber };
 
     } catch (error) {
-        // Si es un error de constraint único (P2002) - cita duplicada
-        if (error.code === 'P2002') {
-            const conflictError = new Error('Este horario acaba de ser reservado. Por favor selecciona otro horario.');
-            conflictError.statusCode = 409;
-            throw conflictError;
-        }
-        // Si es un error de transacción por conflicto de serialización
-        if (error.code === 'P2034' || error.message?.includes('Serializable')) {
-            const conflictError = new Error('El horario fue reservado por otro usuario. Por favor selecciona otro horario.');
-            conflictError.statusCode = 409;
-            throw conflictError;
-        }
         // Si el error ya tiene statusCode (es nuestro error de validación), re-lanzarlo
         if (error.statusCode) {
             throw error;
