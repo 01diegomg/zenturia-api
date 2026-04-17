@@ -154,8 +154,8 @@ export function updateUIAfterLogin() {
 
     if (state.currentUser && state.currentUser.role === 'client') {
         // --- Usuario cliente ha iniciado sesión ---
-        if (agendarBtn) agendarBtn.style.display = 'none';
-        if (userMenuContainer) userMenuContainer.style.display = 'block';
+        if (agendarBtn) agendarBtn.classList.add('hidden');
+        if (userMenuContainer) userMenuContainer.classList.remove('hidden');
 
         if (userMenuName) userMenuName.textContent = `Hola, ${state.currentUser.name.split(' ')[0]}`;
         if (welcomeMessage) welcomeMessage.innerHTML = `Bienvenido, <span class="text-yellow-500">${state.currentUser.name}</span>`;
@@ -167,14 +167,14 @@ export function updateUIAfterLogin() {
 
     } else if (state.currentUser && state.currentUser.role === 'admin') {
         // --- Admin ha iniciado sesión ---
-        if (agendarBtn) agendarBtn.style.display = 'none';
-        if (userMenuContainer) userMenuContainer.style.display = 'none';
+        if (agendarBtn) agendarBtn.classList.add('hidden');
+        if (userMenuContainer) userMenuContainer.classList.add('hidden');
         if (mobileUserSection) mobileUserSection.classList.add('hidden');
 
     } else {
         // --- Nadie ha iniciado sesión ---
-        if (agendarBtn) agendarBtn.style.display = 'inline-flex';
-        if (userMenuContainer) userMenuContainer.style.display = 'none';
+        if (agendarBtn) agendarBtn.classList.remove('hidden');
+        if (userMenuContainer) userMenuContainer.classList.add('hidden');
 
         document.getElementById('user-portal-view')?.classList.add('hidden');
         if (state.siteContent?.hero && welcomeMessage) {

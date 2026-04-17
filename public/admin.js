@@ -2413,9 +2413,12 @@ function updateBarberPhotoPreview(photoUrl) {
     if (!preview) return;
 
     if (photoUrl) {
-        preview.innerHTML = `<img src="${escapeHtml(photoUrl)}" alt="Preview">`;
-        preview.classList.add('has-image');
-        if (removeBtn) removeBtn.classList.remove('hidden');
+        const safeUrl = sanitizeUrl(photoUrl);
+        if (safeUrl) {
+            preview.innerHTML = `<img src="${safeUrl}" alt="Preview">`;
+            preview.classList.add('has-image');
+            if (removeBtn) removeBtn.classList.remove('hidden');
+        }
     } else {
         preview.innerHTML = '<span class="material-icons">person</span>';
         preview.classList.remove('has-image');
@@ -2824,7 +2827,6 @@ export async function openTestimonialEditor(testimonialId = null) {
                 document.getElementById('testimonial-editor-name').value = testimonial.name;
                 document.getElementById('testimonial-editor-text').value = testimonial.text;
                 document.getElementById('testimonial-editor-rating').value = testimonial.rating;
-                document.getElementById('testimonial-editor-avatar').value = testimonial.avatar || '';
                 document.getElementById('testimonial-editor-verified').checked = testimonial.verified;
                 document.getElementById('testimonial-editor-active').checked = testimonial.isActive;
                 updateStarRating(testimonial.rating);
@@ -2937,7 +2939,6 @@ export function setupTestimonialsEventListeners() {
             name: document.getElementById('testimonial-editor-name').value,
             text: document.getElementById('testimonial-editor-text').value,
             rating: document.getElementById('testimonial-editor-rating').value,
-            avatar: document.getElementById('testimonial-editor-avatar').value,
             verified: document.getElementById('testimonial-editor-verified').checked,
             isActive: document.getElementById('testimonial-editor-active').checked
         };
