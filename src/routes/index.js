@@ -13,6 +13,7 @@ import barbersRoutes from './barbers.routes.js';
 import haircutsRoutes from './haircuts.routes.js';
 import facialAnalysisRoutes from './facial-analysis.routes.js';
 import reviewsRoutes from './reviews.routes.js';
+import favoritesRoutes from './favorites.routes.js';
 import * as galleryController from '../controllers/gallery.controller.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
@@ -335,5 +336,6 @@ router.use('/barbers', barbersRoutes);
 router.use('/haircuts', haircutsRoutes);
 router.use('/facial-analysis', facialAnalysisRoutes);
 router.use('/reviews', reviewsRoutes);
+router.use('/favorites', favoritesRoutes);
 
 export default router;

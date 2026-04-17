@@ -17,7 +17,7 @@ router.get('/next-available', appointmentsController.getNextAvailableDays);
 
 // Generic routes (admin only - contains sensitive client data)
 router.get('/', authenticateToken, requireAdmin, appointmentsController.getAllAppointments);
-router.post('/create', bookingLimiter, appointmentsController.createAppointment);
+router.post('/create', authenticateToken, bookingLimiter, appointmentsController.createAppointment);
 
 // Parametric routes LAST
 router.delete('/:id', authenticateToken, appointmentsController.cancelAppointment);

@@ -199,3 +199,17 @@ model FacialAnalysis {
 
   @@index([userId])
 }
+
+// === MODELO DE FOTOS FAVORITAS (IA) ===
+model FavoritePhoto {
+  id              String   @id @default(cuid())
+  userId          String
+  imageUrl        String   // URL de la imagen en Cloudinary
+  haircutName     String   // Nombre del corte recomendado
+  analysisId      String   // ID del análisis original
+  photoTakenAt    DateTime // Fecha en que se tomó la foto original
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@unique([userId, imageUrl]) // Evitar duplicados
+}
