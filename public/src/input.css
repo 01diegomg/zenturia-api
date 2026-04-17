@@ -7515,11 +7515,13 @@ body.mobile-menu-open {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .barber-photo-preview.has-image {
   border-style: solid;
   border-color: var(--dorado-vintage);
+  display: block;
 }
 
 .barber-photo-actions {

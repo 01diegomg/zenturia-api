@@ -168,7 +168,9 @@ export function updateUIAfterLogin() {
     } else if (state.currentUser && state.currentUser.role === 'admin') {
         // --- Admin ha iniciado sesión ---
         if (agendarBtn) agendarBtn.classList.add('hidden');
-        if (userMenuContainer) userMenuContainer.classList.add('hidden');
+        // Mostrar menú de usuario también para admin
+        if (userMenuContainer) userMenuContainer.classList.remove('hidden');
+        if (userMenuName) userMenuName.textContent = `Admin: ${state.currentUser.name.split(' ')[0]}`;
         if (mobileUserSection) mobileUserSection.classList.add('hidden');
 
     } else {
@@ -213,7 +215,8 @@ export function showView(viewName) {
         clientMainView.classList.add('hidden');
         adminMainView.classList.remove('hidden');
         agendarBtn?.classList.add('hidden');
-        mainNavLinks.forEach(link => link.classList.add('hidden'));
+        // Mantener links de navegación visibles para que el admin pueda ver el sitio
+        mainNavLinks.forEach(link => link.classList.remove('hidden'));
         // Ocultar cintillo en vista admin
         if (topBar) {
             topBar.classList.add('top-bar-hidden', 'admin-hidden');

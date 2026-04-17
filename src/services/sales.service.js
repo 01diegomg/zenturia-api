@@ -37,7 +37,9 @@ export async function getSalesStats(period = 'today', customStart = null, custom
             break;
         case 'custom':
             startDate = customStart ? new Date(customStart) : new Date(now.getFullYear(), now.getMonth(), 1);
+            startDate.setHours(0, 0, 0, 0);
             endDate = customEnd ? new Date(customEnd) : now;
+            endDate.setHours(23, 59, 59, 999);
             break;
         default:
             startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
