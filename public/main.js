@@ -187,6 +187,14 @@ function setupEventListeners() {
         )
     );
 
+    // --- Botón para salir del panel admin y volver a la vista de cliente ---
+    document.getElementById('exit-admin-btn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        ui.showView('client');
+        // Scroll suave al inicio
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
     // Permitir enviar con Enter en el modal de login admin
     const adminUserInput = document.getElementById('admin-user');
     const adminPassInput = document.getElementById('admin-pass');
@@ -460,6 +468,23 @@ function setupEventListeners() {
                     lightboxModal.classList.remove('hidden');
                 }
             }
+        }
+    });
+
+    // --- Listeners para navegación horizontal de la galería ---
+    const galleryContainer = document.getElementById('gallery-container');
+    const galleryPrevBtn = document.getElementById('gallery-prev-btn');
+    const galleryNextBtn = document.getElementById('gallery-next-btn');
+
+    galleryPrevBtn?.addEventListener('click', () => {
+        if (galleryContainer) {
+            galleryContainer.scrollBy({ left: -370, behavior: 'smooth' });
+        }
+    });
+
+    galleryNextBtn?.addEventListener('click', () => {
+        if (galleryContainer) {
+            galleryContainer.scrollBy({ left: 370, behavior: 'smooth' });
         }
     });
 

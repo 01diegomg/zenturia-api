@@ -1901,22 +1901,33 @@ async function updateSalesDashboardCustom(startDate, endDate) {
 
     try {
         const token = sessionStorage.getItem('barber_accessToken');
-        if (!token) throw new Error('No autenticado');
+        if (!token) {
+            console.warn('No hay token de autenticación, usando datos locales');
+            updateSalesDashboardLocal('month');
+            return;
+        }
 
         const response = await fetch(
             `${API_BASE_URL}/sales/stats?period=custom&startDate=${startDate}&endDate=${endDate}`,
             { headers: { 'Authorization': `Bearer ${token}` } }
         );
 
-        if (!response.ok) throw new Error('Error al cargar datos');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `Error del servidor: ${response.status}`);
+        }
 
         const data = await response.json();
         if (data.success) {
             updateSalesDashboardUI(data);
+        } else {
+            throw new Error(data.message || 'Respuesta inválida del servidor');
         }
     } catch (error) {
         console.error('Error al cargar datos de ventas:', error);
-        ui.showToast('Error al cargar datos de ventas', 'error');
+        // Usar fallback local en lugar de mostrar error
+        console.log('Usando datos locales como fallback...');
+        updateSalesDashboardLocal('month');
     } finally {
         showSalesLoading(false);
         salesLoading = false;

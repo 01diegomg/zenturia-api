@@ -254,8 +254,16 @@
             <section id="galeria" class="py-20 md:py-32 section-bg">
                 <div class="container mx-auto px-6">
                     <h2 class="section-title text-center mb-12">Nuestro Arte</h2>
-                    <div id="gallery-container" class="gallery-grid">
+                    <div class="gallery-wrapper">
+                        <button type="button" class="gallery-nav-btn prev" id="gallery-prev-btn" aria-label="Anterior">
+                            <span class="material-icons">chevron_left</span>
+                        </button>
+                        <div id="gallery-container" class="gallery-horizontal">
                         </div>
+                        <button type="button" class="gallery-nav-btn next" id="gallery-next-btn" aria-label="Siguiente">
+                            <span class="material-icons">chevron_right</span>
+                        </button>
+                    </div>
                 </div>
             </section>
 

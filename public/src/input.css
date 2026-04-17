@@ -7682,3 +7682,123 @@ body.mobile-menu-open {
 /* ===================================
    FIN 11. ADMIN - GESTIÓN DE BARBEROS
    =================================== */
+
+/* ===================================
+   12. BOTÓN SALIR DEL ADMIN
+   =================================== */
+
+.exit-admin-btn {
+    font-weight: 500;
+    font-size: 0.875rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.exit-admin-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.exit-admin-btn .material-icons {
+    font-size: 1.25rem;
+}
+
+/* ===================================
+   13. GALERÍA HORIZONTAL CON SCROLL
+   =================================== */
+
+.gallery-horizontal {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 1rem 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--dorado-vintage) transparent;
+}
+
+.gallery-horizontal::-webkit-scrollbar {
+    height: 8px;
+}
+
+.gallery-horizontal::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.gallery-horizontal::-webkit-scrollbar-thumb {
+    background: var(--dorado-vintage);
+    border-radius: 4px;
+}
+
+.gallery-horizontal .gallery-item {
+    flex: 0 0 auto;
+    width: 350px;
+    height: 280px;
+    min-height: 280px;
+}
+
+@media (max-width: 768px) {
+    .gallery-horizontal .gallery-item {
+        width: 280px;
+        height: 220px;
+        min-height: 220px;
+    }
+}
+
+/* Contenedor de galería con botones de navegación */
+.gallery-wrapper {
+    position: relative;
+}
+
+.gallery-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid var(--dorado-vintage);
+    color: var(--dorado-vintage);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.gallery-wrapper:hover .gallery-nav-btn {
+    opacity: 1;
+}
+
+.gallery-nav-btn:hover {
+    background: var(--dorado-vintage);
+    color: var(--negro-intenso);
+}
+
+.gallery-nav-btn.prev {
+    left: -24px;
+}
+
+.gallery-nav-btn.next {
+    right: -24px;
+}
+
+@media (max-width: 768px) {
+    .gallery-nav-btn {
+        width: 40px;
+        height: 40px;
+        opacity: 1;
+    }
+
+    .gallery-nav-btn.prev {
+        left: 8px;
+    }
+
+    .gallery-nav-btn.next {
+        right: 8px;
+    }
+}
