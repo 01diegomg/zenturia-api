@@ -338,7 +338,7 @@ function simulateFaceAnalysis() {
 
 /**
  * Generar simulación con Replicate - Versión PREMIUM con preservación de identidad
- * Usa InstantID para mantener el rostro del usuario en las simulaciones
+ * Prioriza modelos que preservan la identidad facial del usuario
  */
 async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
@@ -348,12 +348,12 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
         return generateSimulationWithFalAI(originalImageUrl, haircutStyle);
     }
 
-    console.log(`[Replicate] Token found, starting PREMIUM generation for: ${haircutStyle}`);
-    console.log(`[Replicate] Using original face from: ${originalImageUrl.substring(0, 60)}...`);
+    console.log(`[Replicate] Token found, starting generation for: ${haircutStyle}`);
+    console.log(`[Replicate] Original image: ${originalImageUrl.substring(0, 60)}...`);
 
-    // Estrategia 1: InstantID - MEJOR para preservar identidad facial (PRIORITY)
+    // Estrategia 1: InstantID - MEJOR para preservar identidad facial
     try {
-        console.log('[Replicate] Trying InstantID (best for face preservation)...');
+        console.log('[Replicate] Trying InstantID (preserves face identity)...');
         const result = await generateWithInstantID(originalImageUrl, haircutStyle, REPLICATE_API_TOKEN);
         if (result) {
             console.log('[Replicate] InstantID SUCCESS!');
@@ -367,23 +367,96 @@ async function generateSimulationWithReplicate(originalImageUrl, haircutStyle) {
     try {
         console.log('[Replicate] Trying PhotoMaker...');
         const result = await tryIPAdapterFaceID(originalImageUrl, haircutStyle, REPLICATE_API_TOKEN);
-        if (result) return result;
+        if (result) {
+            console.log('[Replicate] PhotoMaker SUCCESS!');
+            return result;
+        }
     } catch (e) {
         console.log(`[Replicate] PhotoMaker failed: ${e.message}`);
     }
 
-    // Estrategia 3: PuLID - Otra opción para preservar identidad
+    // Estrategia 3: SDXL Lightning - Rápido, buena calidad (no preserva identidad)
     try {
-        console.log('[Replicate] Trying PuLID...');
-        const result = await generateWithPuLID(originalImageUrl, haircutStyle, REPLICATE_API_TOKEN);
-        if (result) return result;
+        console.log('[Replicate] Trying SDXL Lightning...');
+        const result = await generateWithSDXLLightning(haircutStyle, REPLICATE_API_TOKEN);
+        if (result) {
+            console.log('[Replicate] SDXL Lightning SUCCESS!');
+            return result;
+        }
     } catch (e) {
-        console.log(`[Replicate] PuLID failed: ${e.message}`);
+        console.log(`[Replicate] SDXL Lightning failed: ${e.message}`);
     }
 
-    // Estrategia 4: FAL.ai como último recurso
-    console.log('[Replicate] All models failed, trying FAL.ai...');
+    // Estrategia 4: SDXL estándar - Alta calidad
+    try {
+        console.log('[Replicate] Trying SDXL standard...');
+        const result = await generateSimulationWithSDXL(haircutStyle, REPLICATE_API_TOKEN);
+        if (result) return result;
+    } catch (e) {
+        console.log(`[Replicate] SDXL failed: ${e.message}`);
+    }
+
+    // Estrategia 5: FAL.ai como último recurso
+    console.log('[Replicate] All Replicate models failed, trying FAL.ai...');
     return generateSimulationWithFalAI(originalImageUrl, haircutStyle);
+}
+
+/**
+ * SDXL Lightning - Generación rápida (4 pasos)
+ * Versión: 6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe
+ */
+async function generateWithSDXLLightning(haircutStyle, token) {
+    console.log(`[SDXL-Lightning] Generating for: ${haircutStyle}`);
+
+    const prompt = `professional barbershop portrait photo, handsome young man with perfect ${haircutStyle} haircut, freshly styled hair, clean lines, studio lighting, high quality, 4k, photorealistic, magazine cover quality, front facing, confident expression`;
+
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            version: "6f7a773af6fc3e8de9d5a3c00be77c17308914bf67772726aff83496ba1e3bbe",
+            input: {
+                prompt: prompt,
+                negative_prompt: "blurry, ugly, deformed, cartoon, anime, low quality, watermark, text",
+                width: 1024,
+                height: 1024,
+                num_inference_steps: 4,
+                guidance_scale: 0
+            }
+        })
+    });
+
+    const prediction = await response.json();
+
+    if (prediction.detail) {
+        throw new Error(prediction.detail);
+    }
+
+    if (!prediction.urls?.get) return null;
+
+    // Polling
+    let result = prediction;
+    for (let i = 0; i < 30; i++) {
+        if (result.status === 'succeeded' || result.status === 'failed' || result.status === 'canceled') break;
+        await sleep(1000);
+        try {
+            const statusRes = await fetch(result.urls.get, {
+                headers: { 'Authorization': `Token ${token}` }
+            });
+            result = await statusRes.json();
+        } catch (e) { /* ignore */ }
+    }
+
+    if (result.status === 'succeeded' && result.output) {
+        const url = Array.isArray(result.output) ? result.output[0] : result.output;
+        console.log(`[SDXL-Lightning] SUCCESS: ${url.substring(0, 60)}...`);
+        return url;
+    }
+
+    return null;
 }
 
 /**
@@ -406,8 +479,8 @@ async function generateWithInstantID(originalImageUrl, haircutStyle, token) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            // InstantID model - zsxkib/instant-id
-            version: "a18a7e5f8bd3a60f227a7e3b37e9eeebba29a8ae4e0a9889b2389682e0cee22a",
+            // InstantID model - zsxkib/instant-id (version actualizada)
+            version: "2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789",
             input: {
                 image: originalImageUrl,
                 prompt: prompt,
