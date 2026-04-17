@@ -793,16 +793,20 @@ async function renderTimeSlotsForModal(dateKey) {
             throw errorInfo;
         }
 
-        const availableHours = await response.json();
+        const data = await response.json();
+        // El endpoint devuelve { success: true, slots: [...] }
+        const availableSlots = data.slots || data || [];
         ui.timeSlotsContainer.innerHTML = '';
 
-        if (availableHours.length === 0) {
+        if (availableSlots.length === 0) {
             // Mostrar mensaje y buscar días alternativos
             await showNoSlotsWithAlternatives(dateKey);
             return;
         }
 
-        availableHours.forEach(hour => {
+        availableSlots.forEach(slotDateTime => {
+            // Extraer solo la hora del formato ISO "2026-04-21T09:00:00"
+            const hour = slotDateTime.includes('T') ? slotDateTime.split('T')[1].substring(0, 5) : slotDateTime;
             const slot = document.createElement('div');
             slot.textContent = hour;
             slot.className = 'time-slot available';
