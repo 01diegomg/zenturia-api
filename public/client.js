@@ -1045,15 +1045,14 @@ export async function finalizeBooking() {
     ui.setButtonLoadingState(btn, true, "Confirmando...");
 
     try {
-        const response = await fetchWithRetry(
+        // Usar authFetch para enviar el token de autenticación
+        const response = await authFetch(
             `${API_BASE_URL}/appointments/create`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ dateKey, serviceId, barberId, time, userEmail })
-            },
-            2, // reintentos
-            15000 // timeout 15s para crear cita
+            }
         );
 
         if (!response.ok) {
