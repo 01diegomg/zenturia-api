@@ -1093,6 +1093,17 @@ body {
   background-color: rgba(207, 175, 124, 0.1); /* Un fondo sutil del color de acento */
   border-left: 3px solid var(--dorado-vintage);
 }
+/* Contenedor del menú de usuario */
+#user-menu-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#user-menu-container.hidden {
+  display: none !important;
+}
+
 #user-menu-btn {
   /* Asegura que el botón se vea bien y sea clicable */
   min-width: 140px; /* Ancho mínimo para que el texto respire */
@@ -5289,7 +5300,9 @@ img:not([data-loaded]) {
 #image-preview,
 .gallery-item img,
 #admin-gallery-list img,
-.lightbox-content img {
+.lightbox-content img,
+.barber-photo-preview img,
+.barber-admin-photo {
   opacity: 1 !important;
 }
 
