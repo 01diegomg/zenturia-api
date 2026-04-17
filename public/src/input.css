@@ -5314,7 +5314,9 @@ img:not([data-loaded]) {
 #admin-gallery-list img,
 .lightbox-content img,
 .barber-photo-preview img,
-.barber-admin-photo {
+.barber-admin-photo,
+.barber-photo,
+.barber-card img {
   opacity: 1 !important;
 }
 
