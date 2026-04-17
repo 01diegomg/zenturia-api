@@ -1093,6 +1093,18 @@ body {
   background-color: rgba(207, 175, 124, 0.1); /* Un fondo sutil del color de acento */
   border-left: 3px solid var(--dorado-vintage);
 }
+/* Navegación principal - forzar visibilidad en desktop */
+@media (min-width: 768px) {
+  #main-nav {
+    display: flex !important;
+    align-items: center;
+  }
+
+  #main-nav:not(.hidden) #user-menu-container:not(.hidden) {
+    display: flex !important;
+  }
+}
+
 /* Contenedor del menú de usuario */
 #user-menu-container {
   position: relative;
@@ -7529,12 +7541,13 @@ body.mobile-menu-open {
   height: 100%;
   object-fit: cover;
   display: block;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .barber-photo-preview.has-image {
   border-style: solid;
   border-color: var(--dorado-vintage);
-  display: block;
 }
 
 .barber-photo-actions {
