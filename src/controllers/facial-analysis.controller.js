@@ -448,38 +448,40 @@ async function tryIPAdapterFaceID(originalImageUrl, haircutStyle, token) {
 }
 
 /**
- * SDXL Lightning - Generación rápida de imágenes de referencia
- * Genera una imagen de cómo se ve el corte (no preserva identidad)
+ * SDXL Premium - Generación de alta calidad con 50 pasos
+ * Genera imágenes profesionales de cortes de cabello ($0.10-0.40 por imagen)
  */
 async function generateSimulationWithSDXL(haircutStyle, token) {
-    console.log(`[SDXL] Generating reference image for: ${haircutStyle}`);
+    console.log(`[SDXL Premium] Generating HIGH QUALITY image for: ${haircutStyle}`);
 
-    // Lista de modelos a intentar (del más nuevo al más estable)
+    // Modelos de MÁXIMA CALIDAD - usa más pasos = mejor resultado = más costo
     const modelsToTry = [
         {
-            name: 'Stable Diffusion XL (High Quality)',
-            // stability-ai/sdxl - versión de alta calidad con 30 pasos
+            name: 'SDXL Premium (50 steps - Best Quality)',
+            // stability-ai/sdxl - versión premium con 50 pasos para máxima calidad
             version: "7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
             input: {
-                prompt: `ultra realistic professional barbershop portrait photo, handsome latino man with ${haircutStyle} haircut, perfectly styled hair, clean fresh haircut, professional studio lighting, sharp details, high quality, 8k, photorealistic, front view face, magazine quality photo`,
-                negative_prompt: 'blurry, ugly, deformed, cartoon, anime, bad quality, distorted, watermark, text, low resolution, grainy, bad hair, messy hair',
+                prompt: `masterpiece, best quality, ultra high resolution photograph, professional barbershop portrait, extremely handsome young latino man with perfect ${haircutStyle} haircut, freshly cut hair with perfect styling, immaculate grooming, professional studio photography, softbox lighting, sharp focus on face and hair details, 8k uhd, dslr quality, film grain, perfect skin texture, photorealistic, hyperrealistic, award winning photography, vogue magazine cover quality, front facing portrait, symmetrical face, clean shaven or light stubble, confident expression`,
+                negative_prompt: 'ugly, deformed, noisy, blurry, distorted, grainy, cartoon, anime, sketch, drawing, painting, bad anatomy, bad proportions, disfigured, mutation, mutated, extra limbs, missing limbs, floating limbs, disconnected limbs, malformed hands, long neck, long body, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, ugly, blurry, bad anatomy, bad proportions, extra limbs, cloned face, skinny, glitchy, double torso, extra arms, extra hands, mangled fingers, missing lips, ugly face, distorted face, extra legs, low quality, worst quality, watermark, signature, text',
                 width: 1024,
                 height: 1024,
-                num_inference_steps: 30,
-                guidance_scale: 7.5,
-                scheduler: "K_EULER"
+                num_inference_steps: 50,
+                guidance_scale: 8.5,
+                scheduler: "DPMSolverMultistep",
+                refine: "expert_ensemble_refiner",
+                high_noise_frac: 0.8
             }
         },
         {
-            name: 'SDXL Lightning (Backup)',
-            // bytedance/sdxl-lightning-4step - respaldo rápido
-            version: "727e49a643e999d602a896c774a0658ffefea21465756a6ce24b7ea4165fffcd",
+            name: 'SDXL High Quality (40 steps - Backup)',
+            version: "7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
             input: {
-                prompt: `professional barbershop portrait photo, man with ${haircutStyle} haircut, studio lighting, high quality, photorealistic`,
-                negative_prompt: 'blurry, ugly, deformed, cartoon, anime, bad quality',
+                prompt: `professional portrait photo, handsome latino man with ${haircutStyle} haircut, barbershop quality, studio lighting, sharp details, 4k, photorealistic, magazine quality`,
+                negative_prompt: 'blurry, ugly, deformed, cartoon, anime, bad quality, distorted, watermark, text, low resolution',
                 width: 1024,
                 height: 1024,
-                num_inference_steps: 4,
+                num_inference_steps: 40,
+                guidance_scale: 7.5,
                 scheduler: "K_EULER"
             }
         }
