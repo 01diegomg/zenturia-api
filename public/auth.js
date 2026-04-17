@@ -10,6 +10,8 @@ import * as client from './client.js';
 let accessToken = null;
 let refreshTokenValue = null;
 let tokenRefreshInterval = null;
+let isRefreshing = false; // Flag to prevent concurrent refreshes
+let refreshPromise = null; // Store the refresh promise for deduplication
 
 // =======================================================
 // VALIDATION UTILITIES
@@ -175,14 +177,35 @@ export function initAuth() {
 
     if (storedUser && refreshTokenValue) {
         state.currentUser = JSON.parse(storedUser);
-        // Attempt to refresh token on load
-        refreshAccessToken().catch(() => {
-            // If refresh fails, logout
-            handleLogout();
+        // Attempt to refresh token on load with retries - don't logout immediately on failure
+        refreshAccessTokenWithRetry(2).then(success => {
+            if (!success) {
+                console.warn('Token refresh failed after retries, but keeping session active');
+                // Only logout if we truly can't recover - give user a chance to interact
+                // The next API call will attempt refresh again
+            }
         });
         startTokenRefreshTimer();
         trackUserActivity();
     }
+}
+
+/**
+ * Refresh access token with retry logic
+ * @param {number} retries - Number of retries
+ * @returns {Promise<boolean>} True if refresh succeeded
+ */
+async function refreshAccessTokenWithRetry(retries = 2) {
+    for (let i = 0; i <= retries; i++) {
+        const success = await refreshAccessToken();
+        if (success) return true;
+
+        // Wait before retry (exponential backoff: 1s, 2s, 4s...)
+        if (i < retries) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+        }
+    }
+    return false;
 }
 
 /**
@@ -211,21 +234,35 @@ export async function authFetch(url, options = {}) {
 
     // Handle 401 - try to refresh token and retry
     if (response.status === 401) {
-        const data = await response.json();
+        // Clone the response to read it without consuming
+        const clonedResponse = response.clone();
+        let data = {};
+        try {
+            data = await clonedResponse.json();
+        } catch (e) {
+            // Response may not be JSON
+        }
 
-        if (data.code === 'TOKEN_EXPIRED' || data.code === 'TOKEN_REVOKED') {
+        // Check if this is a token-related error
+        const isTokenError = data.code === 'TOKEN_EXPIRED' ||
+                             data.code === 'TOKEN_REVOKED' ||
+                             data.message?.toLowerCase().includes('token') ||
+                             data.message?.toLowerCase().includes('autenticación');
+
+        if (isTokenError && refreshTokenValue) {
             const refreshed = await refreshAccessToken();
 
             if (refreshed) {
                 // Retry the request with new token
                 headers['Authorization'] = `Bearer ${accessToken}`;
                 return fetch(url, { ...options, headers });
-            } else {
-                // Refresh failed, logout
-                handleLogout();
-                throw new Error('Session expired');
             }
+            // Don't logout immediately - let the caller handle the error
+            // This prevents aggressive logouts on transient failures
         }
+
+        // Return the original response so caller can handle appropriately
+        return response;
     }
 
     return response;
@@ -233,44 +270,61 @@ export async function authFetch(url, options = {}) {
 
 /**
  * Refresh the access token using refresh token
+ * Prevents concurrent refresh attempts by reusing the same promise
  */
 async function refreshAccessToken() {
     if (!refreshTokenValue) {
         return false;
     }
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/refresh-token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: refreshTokenValue })
-        });
-
-        if (!response.ok) {
-            throw new Error('Refresh failed');
-        }
-
-        const data = await response.json();
-
-        accessToken = data.accessToken;
-        refreshTokenValue = data.refreshToken;
-
-        // Update stored tokens
-        sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
-        sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken);
-
-        // Update user info if provided
-        if (data.user) {
-            state.currentUser = { ...data.user, role: data.user.role };
-            sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(state.currentUser));
-        }
-
-        return true;
-    } catch (error) {
-        console.error('Token refresh failed:', error);
-        accessToken = null;
-        return false;
+    // If already refreshing, wait for the existing promise
+    if (isRefreshing && refreshPromise) {
+        return refreshPromise;
     }
+
+    isRefreshing = true;
+
+    refreshPromise = (async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/refresh-token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken: refreshTokenValue })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.warn('Refresh response not ok:', response.status, errorData);
+                throw new Error(errorData.message || 'Refresh failed');
+            }
+
+            const data = await response.json();
+
+            accessToken = data.accessToken;
+            refreshTokenValue = data.refreshToken;
+
+            // Update stored tokens
+            sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
+            sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken);
+
+            // Update user info if provided
+            if (data.user) {
+                state.currentUser = { ...data.user, role: data.user.role };
+                sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(state.currentUser));
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Token refresh failed:', error);
+            accessToken = null;
+            return false;
+        } finally {
+            isRefreshing = false;
+            refreshPromise = null;
+        }
+    })();
+
+    return refreshPromise;
 }
 
 /**

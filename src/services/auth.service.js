@@ -12,6 +12,10 @@ if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
 
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = 7;
+const TOKEN_GRACE_PERIOD_MS = 30000; // 30 seconds grace period for old tokens
+
+// In-memory cache for recently rotated tokens (to handle race conditions)
+const rotatedTokensCache = new Map();
 
 /**
  * Generate an access token for a user
@@ -67,11 +71,19 @@ export function verifyAccessToken(token) {
 
 /**
  * Refresh tokens using a valid refresh token
+ * Includes grace period to handle race conditions with concurrent requests
  * @param {string} refreshToken - The refresh token
  * @returns {Promise<Object|null>} New tokens or null if invalid
  */
 export async function refreshTokens(refreshToken) {
     try {
+        // Check if this token was recently rotated (race condition handling)
+        const cachedResult = rotatedTokensCache.get(refreshToken);
+        if (cachedResult && Date.now() - cachedResult.timestamp < TOKEN_GRACE_PERIOD_MS) {
+            console.log('[Auth] Returning cached tokens for recently rotated token');
+            return cachedResult.result;
+        }
+
         // Find the refresh token in database
         const storedToken = await prisma.refreshToken.findUnique({
             where: { token: refreshToken },
@@ -79,6 +91,13 @@ export async function refreshTokens(refreshToken) {
         });
 
         if (!storedToken) {
+            // Token not found - might have been rotated, check cache
+            const cachedFallback = rotatedTokensCache.get(refreshToken);
+            if (cachedFallback && Date.now() - cachedFallback.timestamp < TOKEN_GRACE_PERIOD_MS) {
+                console.log('[Auth] Token was rotated, returning cached result');
+                return cachedFallback.result;
+            }
+            console.log('[Auth] Refresh token not found and not in cache');
             return null;
         }
 
@@ -90,14 +109,11 @@ export async function refreshTokens(refreshToken) {
 
         const user = storedToken.user;
 
-        // Delete the old refresh token (rotation)
-        await prisma.refreshToken.delete({ where: { id: storedToken.id } });
-
-        // Generate new tokens
+        // Generate new tokens BEFORE deleting old one
         const newAccessToken = generateAccessToken(user);
         const newRefreshToken = await generateRefreshToken(user);
 
-        return {
+        const result = {
             accessToken: newAccessToken,
             refreshToken: newRefreshToken,
             user: {
@@ -107,9 +123,35 @@ export async function refreshTokens(refreshToken) {
                 role: user.role
             }
         };
+
+        // Cache the result for grace period BEFORE deleting old token
+        rotatedTokensCache.set(refreshToken, {
+            timestamp: Date.now(),
+            result: result
+        });
+
+        // Delete the old refresh token (rotation)
+        await prisma.refreshToken.delete({ where: { id: storedToken.id } });
+
+        // Clean up old cache entries periodically
+        cleanupRotatedTokensCache();
+
+        return result;
     } catch (error) {
         console.error('Error refreshing tokens:', error);
         return null;
+    }
+}
+
+/**
+ * Clean up expired entries from the rotated tokens cache
+ */
+function cleanupRotatedTokensCache() {
+    const now = Date.now();
+    for (const [token, data] of rotatedTokensCache.entries()) {
+        if (now - data.timestamp > TOKEN_GRACE_PERIOD_MS * 2) {
+            rotatedTokensCache.delete(token);
+        }
     }
 }
 

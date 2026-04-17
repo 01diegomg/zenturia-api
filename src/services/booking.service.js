@@ -24,6 +24,83 @@ export async function createAppointment({ dateKey, serviceId, barberId, time, us
         throw error;
     }
 
+    // VALIDACIÓN: Verificar que el horario esté disponible para este barbero
+    // Esto previene el empalme de citas cuando dos usuarios reservan al mismo tiempo
+    const serviceDuration = service.duration || 30; // duración en minutos
+    const slotStart = requestedDateTime;
+    const slotEnd = new Date(requestedDateTime.getTime() + serviceDuration * 60 * 1000);
+
+    // Buscar citas que se empalmen con el horario solicitado
+    const conflictingAppointment = await prisma.appointment.findFirst({
+        where: {
+            barberId: barber.id,
+            status: { not: 'CANCELLED' },
+            // La cita existente debe empalmarse con el slot solicitado
+            OR: [
+                // El inicio del nuevo slot cae dentro de una cita existente
+                {
+                    date: { lte: slotStart },
+                    AND: {
+                        service: {
+                            // El fin de la cita existente es después del inicio del nuevo slot
+                        }
+                    }
+                }
+            ],
+            // Simplificación: buscar citas en el mismo horario exacto
+            date: slotStart
+        },
+        include: {
+            service: { select: { duration: true } }
+        }
+    });
+
+    if (conflictingAppointment) {
+        const error = new Error('Este horario ya no está disponible. Por favor selecciona otro horario.');
+        error.statusCode = 409; // Conflict
+        throw error;
+    }
+
+    // Validación adicional: verificar que no haya citas que terminen durante nuestro slot
+    // o que nuestro slot termine durante otra cita
+    const overlappingAppointments = await prisma.appointment.findMany({
+        where: {
+            barberId: barber.id,
+            status: { not: 'CANCELLED' },
+            date: {
+                // Buscar citas en el rango del día
+                gte: new Date(dateKey + 'T00:00:00'),
+                lte: new Date(dateKey + 'T23:59:59.999')
+            }
+        },
+        include: {
+            service: { select: { duration: true } }
+        }
+    });
+
+    // Verificar cada cita existente para detectar empalmes
+    for (const existingAppt of overlappingAppointments) {
+        const existingStart = existingAppt.date;
+        const existingDuration = existingAppt.service?.duration || 30;
+        const existingEnd = new Date(existingStart.getTime() + existingDuration * 60 * 1000);
+
+        // Verificar si hay empalme:
+        // El nuevo slot empieza durante la cita existente O
+        // El nuevo slot termina durante la cita existente O
+        // La cita existente está completamente dentro del nuevo slot
+        const overlaps = (
+            (slotStart >= existingStart && slotStart < existingEnd) || // Nuevo empieza durante existente
+            (slotEnd > existingStart && slotEnd <= existingEnd) ||     // Nuevo termina durante existente
+            (slotStart <= existingStart && slotEnd >= existingEnd)     // Nuevo envuelve existente
+        );
+
+        if (overlaps) {
+            const error = new Error('Este horario se empalma con otra cita. Por favor selecciona otro horario.');
+            error.statusCode = 409; // Conflict
+            throw error;
+        }
+    }
+
     const newAppointment = await prisma.appointment.create({
         data: {
             date: requestedDateTime,
@@ -146,14 +223,30 @@ export async function getAvailableSlots(date) {
         where: {
             date: { gte: startOfDay, lte: endOfDay },
             status: { not: 'CANCELLED' }
+        },
+        include: {
+            service: { select: { duration: true } }
         }
     });
 
-    const bookedSlots = new Set(
-        existingAppointments.map(app => app.date.toTimeString().substring(0, 5))
-    );
+    // Build a set of blocked time ranges considering service duration
+    const blockedRanges = existingAppointments.map(app => {
+        const startTime = app.date;
+        const duration = app.service?.duration || 30; // Default 30 min if no duration
+        const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
+        return { start: startTime, end: endTime };
+    });
 
-    return [...allPossibleSlots].filter(slot => !bookedSlots.has(slot));
+    // Filter out slots that would overlap with existing appointments
+    return [...allPossibleSlots].filter(slotTime => {
+        const slotDate = new Date(`${date}T${slotTime}:00`);
+        for (const range of blockedRanges) {
+            if (slotDate >= range.start && slotDate < range.end) {
+                return false;
+            }
+        }
+        return true;
+    });
 }
 
 /**
@@ -231,20 +324,40 @@ export async function getAvailableSlotsForBarber(date, barberId) {
     const startOfDay = new Date(date + 'T00:00:00');
     const endOfDay = new Date(date + 'T23:59:59.999');
 
-    // Only get appointments for this specific barber
+    // Only get appointments for this specific barber, including service duration
     const existingAppointments = await prisma.appointment.findMany({
         where: {
             barberId,
             date: { gte: startOfDay, lte: endOfDay },
             status: { not: 'CANCELLED' }
+        },
+        include: {
+            service: { select: { duration: true } }
         }
     });
 
-    const bookedSlots = new Set(
-        existingAppointments.map(app => app.date.toTimeString().substring(0, 5))
-    );
+    // Build a set of blocked time ranges considering service duration
+    const blockedRanges = existingAppointments.map(app => {
+        const startTime = app.date;
+        const duration = app.service?.duration || 30; // Default 30 min if no duration
+        const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
+        return { start: startTime, end: endTime };
+    });
 
-    return [...allPossibleSlots].filter(slot => !bookedSlots.has(slot)).sort();
+    // Filter out slots that would overlap with existing appointments
+    const availableSlots = [...allPossibleSlots].filter(slotTime => {
+        const slotDate = new Date(`${date}T${slotTime}:00`);
+        // Check if this slot overlaps with any blocked range
+        for (const range of blockedRanges) {
+            // A slot is blocked if it falls within an existing appointment's time range
+            if (slotDate >= range.start && slotDate < range.end) {
+                return false; // Slot is blocked
+            }
+        }
+        return true; // Slot is available
+    }).sort();
+
+    return availableSlots;
 }
 
 /**

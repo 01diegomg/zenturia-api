@@ -379,7 +379,13 @@ export async function openAdminDayModal(dateKey) {
             throw errorInfo;
         }
 
-        const availableSlots = await response.json();
+        const data = await response.json();
+        // El endpoint devuelve { success: true, slots: [...] }
+        // Extraer solo la hora de cada slot ISO "2026-04-18T09:00:00" -> "09:00"
+        const rawSlots = data.slots || data || [];
+        const availableSlots = rawSlots.map(slot =>
+            slot.includes('T') ? slot.split('T')[1].substring(0, 5) : slot
+        );
 
         // 2. Obtenemos las citas ya agendadas para ese día
         const bookedAppointments = state.allAppointments[dateKey] || [];
